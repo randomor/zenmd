@@ -1,4 +1,10 @@
 {
+  "name": "marxt",
+  "version": "0.0.1",
+  "bin": {
+    "marxt": "./index.js"
+  },
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "test": "jest"
