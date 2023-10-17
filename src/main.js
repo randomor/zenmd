@@ -32,8 +32,8 @@ const configImagePath = (imageDir = 'assets', currentFile) => {
   marked.setOptions({ renderer });
 }
 
-const fileToHtml = (inputFile, outputFile, options) => {
-  console.log("Converting: ", inputFile, outputFile, options);
+const fileToHtml = (inputFile, outputPath, options) => {
+  console.log("Converting: ", inputFile, outputPath, options);
   fs.readFile(inputFile, 'utf8', (err, data) => {
     if (err) {
       console.error(`Error reading file ${inputFile}:`, err);
@@ -52,7 +52,7 @@ const fileToHtml = (inputFile, outputFile, options) => {
     // Log Front Matter to Console
     console.log('Front Matter:', frontMatter);
 
-    const outputFileName = outputFile || (frontMatter.slug && `${frontMatter.slug}.html`) || 'output.html';
+    const outputFileName = (frontMatter.slug && `${frontMatter.slug}.html`) || 'output.html';
 
     const outputFolder = options.outputFolder || './dist/';
 
@@ -77,11 +77,11 @@ const fileToHtml = (inputFile, outputFile, options) => {
 }
 
 // Load Markdown file and convert it to HTML
-export const markdownToHtml = async (inputPattern, outputFile, options = { outputFolder: './dist/' }) => {
+export const markdownToHtml = async (inputPattern, outputPath, options = { outputFolder: './dist/' }) => {
   try {
     const files = await glob(inputPattern);
     files.forEach(file => {
-      fileToHtml(file, outputFile, options);
+      fileToHtml(file, outputPath, options);
     });
   } catch (err) {
     console.error('Error converting Markdown to HTML:', err);

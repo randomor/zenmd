@@ -12,7 +12,8 @@
   "dependencies": {
     "glob": "^10.3.10",
     "gray-matter": "^4.0.3",
-    "marked": "^9.1.2"
+    "marked": "^9.1.2",
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "jest": "^29.7.0"
