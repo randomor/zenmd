@@ -28,4 +28,4 @@ const argv = yargs(hideBin(process.argv))
 console.log(chalk.blue('Matching .md files from directory: '), chalk.green(argv.directoryPath));
 console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
 
-markdownToHtml(argv.directoryPath, argv.output, argv.tags);
+markdownToHtml(argv.directoryPath, argv.output, { tags: argv.tags });
