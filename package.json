@@ -6,8 +6,8 @@
   },
   "type": "module",
   "scripts": {
-    "start": "bun index.js",
-    "test": "bun test"
+    "start": "node index.js",
+    "test": "node"
   },
   "dependencies": {
     "glob": "^10.3.10",

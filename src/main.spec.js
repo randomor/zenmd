@@ -1,22 +1,37 @@
-import { markdownToHtml, fileToHtml } from "./main";
-import fs from 'fs';
-import path from 'path';
+import { markdownToHtml, fileToHtml } from "./main.js";
+import fs from 'fs/promises';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+
+const outputFolder = './dist';
 
 describe("markdownToHtml", () => {
   it("converts markdown to html", async () => { 
-    const inputPattern = "./docs/**/*.md";
-    const outputPath = "./dist/";
-    const result = await markdownToHtml(inputPattern, outputPath);
-    expect(result).toBe(true);
+    const inputPattern = "./docs/*.md";
+    await fs.rm(outputFolder, { recursive: true });
+    await markdownToHtml(inputPattern, outputFolder);
+    const resultFile = './dist/home.html';
+    try {
+      await fs.access(resultFile);  
+      assert.strictEqual(true, true);
+    } catch {
+      assert.strictEqual(false, true);
+    }
   })
 });
 
-describe.only("fileToHtml", () => {
+describe("fileToHtml", () => {
   const sourceFile = './docs/home.md';
   it("convert file to html", async () => {
-    await fileToHtml(sourceFile, './dist', {})
-    const resultFilePath = path.join(process.cwd(), './dist', 'home.html');
-    const resultFile = fs.existsSync(resultFilePath);
-    expect(resultFile).toBe(true);
+    // delete dist folder
+    await fs.rm(outputFolder, { recursive: true });
+    await fileToHtml(sourceFile, outputFolder, {})
+    const resultFile = './dist/home.html';
+    try {
+      await fs.access(resultFile);  
+      assert.strictEqual(true, true);
+    } catch {
+      assert.strictEqual(false, true);
+    }
   })
 })
