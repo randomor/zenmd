@@ -85,9 +85,7 @@ export const markdownToHtml = async (inputPattern, outputFolder, options = {}) =
       cwd: process.cwd(),
     };
     const files = await glob(inputPattern, globOptions);
-    files.forEach(async file => {
-      await fileToHtml(file, outputFolder, options);
-    });
+    await Promise.all(files.map(file => fileToHtml(file, outputFolder, options)));
   } catch (err) {
     console.error('Error converting Markdown to HTML:', err);
   }
