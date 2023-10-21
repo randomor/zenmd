@@ -34,11 +34,6 @@ const configImagePath = (imageDir = 'assets', currentFile) => {
   marked.setOptions({ renderer });
 }
 
-// export const fileToHtml = (inputFile, outputFolder = './dist/', options = {}) => {
-//   console.log(inputFile, "found file");
-//   return "file"
-// }
-
 export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
   console.log("Converting: ", inputFile, outputFileFolder);
   try {
@@ -52,7 +47,6 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
     const htmlContent = marked(parsedMarkdown.content);
     const frontMatter = parsedMarkdown.data;
 
-    const { title = 'Untitled' } = frontMatter;
     // Log Front Matter to Console
     console.log('Front Matter:', frontMatter);
 
@@ -66,7 +60,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const htmlOutput = wrapHtml(title, htmlContent);
+    const htmlOutput = renderHtml({title: 'Untitled', ...frontMatter, content: htmlContent});
     
     const outputFilePath = path.join(outputFileFolder, outputFileName);
     
@@ -97,7 +91,7 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
 };
 
 // Wrap the HTML content with necessary HTML & Tailwind tags
-const wrapHtml = (title, content) => {
+const renderHtml = ({ title, content }) => {
   return `
   <!doctype html>
   <html>
@@ -109,7 +103,6 @@ const wrapHtml = (title, content) => {
   </head>
   <body>
     <main  class="prose lg:prose-xl max-w-full mx-auto p-24">
-      <h1>${title}</h1>
       ${content}
     </main>
   </body>
