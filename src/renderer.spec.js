@@ -1,4 +1,3 @@
-
 import fs from 'fs/promises';
 import assert from 'node:assert';
 import { describe, it, beforeEach } from 'node:test';
@@ -17,7 +16,7 @@ describe("fileToHtml", () => {
       .then(() => true)
       .catch(() => false);
     
-    assert.strictEqual(fileExists, true);
+    assert(fileExists);
   });
 
   it("converts second level file to html with right path", async () => {
@@ -29,7 +28,7 @@ describe("fileToHtml", () => {
       .then(() => true)
       .catch(() => false);
     
-    assert.strictEqual(fileExists, true);
+    assert(fileExists);
   });
 
   it("falls to default layout if no layout is found", async () => {
@@ -39,6 +38,16 @@ describe("fileToHtml", () => {
     const resultFile = './dist/example.html';
     const fileContent = await fs.readFile(resultFile, 'utf-8');
     const renderedFromDefaultLayout = fileContent.includes('Marxt');
-    assert.strictEqual(renderedFromDefaultLayout, true);
+    assert(renderedFromDefaultLayout);
+  });
+
+  it("renders relative link to .md with right path", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const outputFolder = './dist';
+    await fileToHtml(sourceFile, outputFolder, {})
+    const resultFile = './dist/example.html';
+    const fileContent = await fs.readFile(resultFile, 'utf-8');
+    const renderedWithRightLink = fileContent.includes('nested.html');
+    assert(renderedWithRightLink);
   });
 });
