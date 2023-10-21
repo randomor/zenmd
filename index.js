@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import { hideBin } from 'yargs/helpers';
 
 const argv = yargs(hideBin(process.argv))
-  .command('$0 [directoryPath]', 'default command', (yargs) => {
+  .command('$0 [inputFolder]', 'default command', (yargs) => {
     yargs.positional('inputFolder', {
       describe: 'Input folder path',
       default: './docs',
