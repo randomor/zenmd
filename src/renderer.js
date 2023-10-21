@@ -5,30 +5,38 @@ import path from 'path';
 import mustache from 'mustache';
 import { fileURLToPath } from 'url';
 
-const configImagePath = (imageDir = 'assets', currentFile) => {
+const configRenderer = (currentFile, imageDir = 'assets') => {
   // Create a custom renderer
   const renderer = new marked.Renderer();
 
   // Override the image renderer
-  renderer.image = async function (href, title, text) {
-    // Prepend 'assets/' to the image path
-    const targetHref = path.join(imageDir, href);
-    const outputDir = path.join('./dist/', imageDir);
-    // Create the output directory if it doesn't exist
-    try {
-      await fs.access(outputDir);
-    } catch (error) {
-      await fs.mkdir(outputDir, { recursive: true });
-    }
-    const outputFolder = path.join('./dist/', imageDir, href);
+  // renderer.image = async function (href, title, text) {
+  //   // Prepend 'assets/' to the image path
+  //   const targetHref = path.join(imageDir, href);
+  //   const outputDir = path.join('./dist/', imageDir);
+  //   // Create the output directory if it doesn't exist
+  //   try {
+  //     await fs.access(outputDir);
+  //   } catch (error) {
+  //     await fs.mkdir(outputDir, { recursive: true });
+  //   }
+  //   const outputFolder = path.join('./dist/', imageDir, href);
 
-    // Get current file's directory
-    const currentFileDir = path.dirname(currentFile);
-    // Get the relative path from the current file to the image
-    const imagePath = path.join(currentFileDir, href);
+  //   // Get current file's directory
+  //   const currentFileDir = path.dirname(currentFile);
+  //   // Get the relative path from the current file to the image
+  //   const imagePath = path.join(currentFileDir, href);
 
-    await fs.cp(imagePath, outputFolder);
-    return `<img src="${targetHref}" alt="${text}" title="${title || text}">`;
+  //   await fs.cp(imagePath, outputFolder);
+  //   return `<img src="${targetHref}" alt="${text}" title="${title || text}">`;
+  // };
+
+  // Override the link renderer
+  renderer.link = function (href, title, text) {
+    // if href is a local file ending with .md, convert it to .html
+    const isLocalMdFile = href.startsWith('.') && href.endsWith('.md');
+    const targetHref = isLocalMdFile ? href.replace('.md', '.html') : href;
+    return `<a href="${targetHref}" title="${title || text}">${text}</a>`;
   };
 
   // Use the custom renderer
@@ -42,7 +50,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
 
     const parsedMarkdown = matter(data);
       
-    await configImagePath('assets', inputFile);
+    await configRenderer(inputFile);
 
     // Convert Markdown to HTML using marked
     const htmlContent = marked(parsedMarkdown.content);
@@ -53,7 +61,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
 
     const inputFileName = path.parse(inputFile).name;
 
-    const outputFileName = (frontMatter.slug && `${frontMatter.slug}.html`) || `${inputFileName}.html`;
+    const outputFileName = `${inputFileName}.html`;
 
     try {
       await fs.access(outputFileFolder);

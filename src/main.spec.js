@@ -13,14 +13,16 @@ describe("processFolder", () => {
     const fileList = [
       './dist/example.html',
       './dist/second level/nested.html',
-      './dist/second level/renamed-slug.html',
+      './dist/second level/nested with space.html',
     ];
-    const fileExists = await Promise.all(fileList.map(async (file) => {
-      return await fs.access(file)
-        .then(() => true)
-        .catch(() => false);
-    }));
 
-    assert.strictEqual(fileExists.every((file) => file === true), true);
+    for (const file of fileList) {
+      try {
+        await fs.access(file);
+        assert.ok(true);
+      } catch (error) {
+        throw new Error(`File ${file} does not exist`);
+      }
+    }
   });
 });
