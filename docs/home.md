@@ -8,6 +8,11 @@ publish: true
 
 _One single command to transform a directory of .md files into a static site._
 
+## Use Cases
+
+- Bring your own editor and host. Obsidian, Bear, Typora, VS Code... Netlify, Vercel, Cloudflare...
+- Publish your [Obsidian](https://obsidian.md/) digital garden.
+
 ## Principles
 
 - **Simplicity at its Core**: Just an `npx` command away to transform your markdown files into a beautiful static site.
