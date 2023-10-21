@@ -31,14 +31,28 @@ describe("fileToHtml", () => {
     assert(fileExists);
   });
 
-  it("falls to default layout if no layout is found", async () => {
-    const sourceFile = './src/__test__/example.md';
-    const outputFolder = './dist';
-    await fileToHtml(sourceFile, outputFolder, {})
-    const resultFile = './dist/example.html';
-    const fileContent = await fs.readFile(resultFile, 'utf-8');
-    const renderedFromDefaultLayout = fileContent.includes('Marxt');
-    assert(renderedFromDefaultLayout);
+  describe("renders correct layout", () => {
+    
+    it("renders layout if layout is found", async () => {
+      const sourceFile = './src/__test__/example.md';
+      const outputFolder = './dist';
+      await fileToHtml(sourceFile, outputFolder, { templatePath: './src/__test__/layout.html' })
+      const resultFile = './dist/example.html';
+      const fileContent = await fs.readFile(resultFile, 'utf-8');
+      const renderedWithLayout = fileContent.includes('layout from root');
+      assert(renderedWithLayout, "Layout not found");
+    });
+
+
+    it("falls to default layout if no layout is found", async () => {
+      const sourceFile = './src/__test__/example.md';
+      const outputFolder = './dist';
+      await fileToHtml(sourceFile, outputFolder, {})
+      const resultFile = './dist/example.html';
+      const fileContent = await fs.readFile(resultFile, 'utf-8');
+      const renderedFromDefaultLayout = fileContent.includes('Marxt');
+      assert(renderedFromDefaultLayout);
+    });
   });
 
   it("renders relative link to .md with right path", async () => {
