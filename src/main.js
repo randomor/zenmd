@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import { marked } from 'marked';
 import matter from 'gray-matter';
 import path from 'path';
+import mustache from 'mustache';
 import { glob } from 'glob';
 
 const configImagePath = (imageDir = 'assets', currentFile) => {
@@ -60,7 +61,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const htmlOutput = renderHtml({title: 'Untitled', ...frontMatter, content: htmlContent});
+    const htmlOutput = await renderHtml({title: 'Untitled', ...frontMatter, content: htmlContent});
     
     const outputFilePath = path.join(outputFileFolder, outputFileName);
     
@@ -91,21 +92,8 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
 };
 
 // Wrap the HTML content with necessary HTML & Tailwind tags
-const renderHtml = ({ title, content }) => {
-  return `
-  <!doctype html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
-    <title>${title}</title>
-  </head>
-  <body>
-    <main  class="prose lg:prose-xl max-w-full mx-auto p-24">
-      ${content}
-    </main>
-  </body>
-  </html>
-  `;
+const renderHtml = async ({ title, content }) => {
+  const template = await fs.readFile('./docs/layout.html', 'utf8');
+  const rendered = mustache.render(template, { title, content });
+  return rendered;
 };

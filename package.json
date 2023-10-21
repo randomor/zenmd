@@ -10,9 +10,11 @@
     "test": "node"
   },
   "dependencies": {
+    "chalk": "^5.3.0",
     "glob": "^10.3.10",
     "gray-matter": "^4.0.3",
     "marked": "^9.1.2",
+    "mustache": "^4.2.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
