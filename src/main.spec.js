@@ -29,6 +29,16 @@ describe("fileToHtml", () => {
     
     assert.strictEqual(fileExists, true);
   });
+
+  it("falls to default layout if no layout is found", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const outputFolder = './dist';
+    await fileToHtml(sourceFile, outputFolder, {})
+    const resultFile = './dist/example.html';
+    const fileContent = await fs.readFile(resultFile, 'utf-8');
+    const renderedFromDefaultLayout = fileContent.includes('Marxt');
+    assert.strictEqual(renderedFromDefaultLayout, true);
+  });
 });
 
 describe("processFolder", () => {

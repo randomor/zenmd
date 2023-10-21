@@ -4,6 +4,7 @@ import matter from 'gray-matter';
 import path from 'path';
 import mustache from 'mustache';
 import { glob } from 'glob';
+import { fileURLToPath } from 'url';
 
 const configImagePath = (imageDir = 'assets', currentFile) => {
   // Create a custom renderer
@@ -61,7 +62,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const templatePath = await findLayout(path.dirname(inputFile), './src/__test__');
+    const { templatePath } = options;
 
     const htmlOutput = await renderHtml(templatePath, {title: 'Untitled', ...frontMatter, content: htmlContent});
     
@@ -117,18 +118,22 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
     };
     const inputGlob = path.join(inputFolder, '**/*.md');
     const files = await glob(inputGlob, globOptions);
-    await Promise.all(files.map(file => {
+    await Promise.all(files.map(async file => {
       const relativePath = path.relative(inputFolder, file);
       const outputFileFolder = path.join(outputFolder, path.dirname(relativePath));
-      return fileToHtml(file, outputFileFolder, options);
+      const templatePath = await findLayout(path.dirname(inputFile), inputFolder);
+      return fileToHtml(file, outputFileFolder, { templatePath, ...options });
     }));
   } catch (err) {
     console.error('Error converting Markdown to HTML:', err);
   }
 };
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Wrap the HTML content with necessary HTML & Tailwind tags
-const renderHtml = async (templatePath = './docs/layout.html', { title, content }) => {
+const renderHtml = async (templatePath, { title, content }) => {
+  templatePath = templatePath || path.join(__dirname, './static/default_layout.html');
   const template = await fs.readFile(templatePath, 'utf8');
   const rendered = mustache.render(template, { title, content });
   return rendered;
