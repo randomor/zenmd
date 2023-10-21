@@ -61,7 +61,9 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const htmlOutput = await renderHtml({title: 'Untitled', ...frontMatter, content: htmlContent});
+    const templatePath = await findLayout(path.dirname(inputFile), './src/__test__');
+
+    const htmlOutput = await renderHtml(templatePath, {title: 'Untitled', ...frontMatter, content: htmlContent});
     
     const outputFilePath = path.join(outputFileFolder, outputFileName);
     
@@ -73,6 +75,40 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
   }
 };
 
+async function findLayout(directory, inputFolder, filename = 'layout.html') {
+  try {
+    // Helper function to check file existence
+    async function fileExists(filePath) {
+      try {
+        await fs.access(filePath);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Check in the current directory
+    let currentDir = directory;
+    while (path.resolve(currentDir) !== path.resolve(inputFolder)) {
+      const filePath = path.join(currentDir, filename);
+      if (await fileExists(filePath)) {
+        return filePath;
+      }
+      // Move up to the parent directory
+      currentDir = path.dirname(currentDir);
+    }
+
+    // Check in the inputFolder as well
+    const filePath = path.join(inputFolder, filename);
+    if (await fileExists(filePath)) {
+      return filePath;
+    }
+
+    throw new Error(`No ${filename} found in ${directory} or up to ${inputFolder}.`);
+  } catch (error) {
+    throw error;
+  }
+}
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputFolder, outputFolder, options = {}) => {
   try {
@@ -92,8 +128,8 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
 };
 
 // Wrap the HTML content with necessary HTML & Tailwind tags
-const renderHtml = async ({ title, content }) => {
-  const template = await fs.readFile('./docs/layout.html', 'utf8');
+const renderHtml = async (templatePath = './docs/layout.html', { title, content }) => {
+  const template = await fs.readFile(templatePath, 'utf8');
   const rendered = mustache.render(template, { title, content });
   return rendered;
 };
