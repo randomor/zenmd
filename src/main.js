@@ -77,38 +77,34 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
 };
 
 async function findLayout(directory, inputFolder, filename = 'layout.html') {
-  try {
-    // Helper function to check file existence
-    async function fileExists(filePath) {
-      try {
-        await fs.access(filePath);
-        return true;
-      } catch {
-        return false;
-      }
+  // Helper function to check file existence
+  async function fileExists(filePath) {
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
     }
+  }
 
-    // Check in the current directory
-    let currentDir = directory;
-    while (path.resolve(currentDir) !== path.resolve(inputFolder)) {
-      const filePath = path.join(currentDir, filename);
-      if (await fileExists(filePath)) {
-        return filePath;
-      }
-      // Move up to the parent directory
-      currentDir = path.dirname(currentDir);
-    }
-
-    // Check in the inputFolder as well
-    const filePath = path.join(inputFolder, filename);
+  // Check in the current directory
+  let currentDir = directory;
+  while (path.resolve(currentDir) !== path.resolve(inputFolder)) {
+    const filePath = path.join(currentDir, filename);
     if (await fileExists(filePath)) {
       return filePath;
     }
-
-    throw new Error(`No ${filename} found in ${directory} or up to ${inputFolder}.`);
-  } catch (error) {
-    throw error;
+    // Move up to the parent directory
+    currentDir = path.dirname(currentDir);
   }
+
+  // Check in the inputFolder as well
+  const filePath = path.join(inputFolder, filename);
+  if (await fileExists(filePath)) {
+    return filePath;
+  }
+
+  return undefined;
 }
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputFolder, outputFolder, options = {}) => {
@@ -121,7 +117,7 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
     await Promise.all(files.map(async file => {
       const relativePath = path.relative(inputFolder, file);
       const outputFileFolder = path.join(outputFolder, path.dirname(relativePath));
-      const templatePath = await findLayout(path.dirname(inputFile), inputFolder);
+      const templatePath = await findLayout(file, inputFolder);
       return fileToHtml(file, outputFileFolder, { templatePath, ...options });
     }));
   } catch (err) {
@@ -136,5 +132,6 @@ const renderHtml = async (templatePath, { title, content }) => {
   templatePath = templatePath || path.join(__dirname, './static/default_layout.html');
   const template = await fs.readFile(templatePath, 'utf8');
   const rendered = mustache.render(template, { title, content });
+  console.log("render complete");
   return rendered;
 };

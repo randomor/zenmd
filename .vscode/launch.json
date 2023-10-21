@@ -19,7 +19,7 @@
       ],
       "program": "${file}",
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "internalConsoleOptions": "neverOpen",
     }
   ]
 }
