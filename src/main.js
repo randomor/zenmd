@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs/promises';
 import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
 
@@ -21,33 +22,25 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
   }
 };
 
-async function findLayout(directory, inputFolder, filename = 'layout.html') {
+async function findLayout(currentFile, inputFolder, layoutName = 'layout.html') {
   // Helper function to check file existence
   async function fileExists(filePath) {
     try {
       await fs.access(filePath);
       return true;
-    } catch {
+    } catch (error) {
       return false;
     }
   }
 
-  // Check in the current directory
-  let currentDir = directory;
-  while (path.resolve(currentDir) !== path.resolve(inputFolder)) {
-    const filePath = path.join(currentDir, filename);
+  let currentDir = currentFile;
+  do {
+    currentDir = path.dirname(currentDir);
+    const filePath = path.join(currentDir, layoutName);
     if (await fileExists(filePath)) {
       return filePath;
     }
-    // Move up to the parent directory
-    currentDir = path.dirname(currentDir);
-  }
-
-  // Check in the inputFolder as well
-  const filePath = path.join(inputFolder, filename);
-  if (await fileExists(filePath)) {
-    return filePath;
-  }
+  } while (path.resolve(currentDir) !== path.resolve(inputFolder));
 
   return undefined;
 }
