@@ -39,8 +39,8 @@ const configImagePath = (imageDir = 'assets', currentFile) => {
 //   return "file"
 // }
 
-export const fileToHtml = async (inputFile, outputFolder = './dist/', options = {}) => {
-  console.log("Converting: ", inputFile, outputFolder);
+export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
+  console.log("Converting: ", inputFile, outputFileFolder);
   try {
     const data = await fs.readFile(inputFile, 'utf8');
 
@@ -61,15 +61,15 @@ export const fileToHtml = async (inputFile, outputFolder = './dist/', options = 
     const outputFileName = (frontMatter.slug && `${frontMatter.slug}.html`) || `${inputFileName}.html`;
 
     try {
-      await fs.access(outputFolder);
+      await fs.access(outputFileFolder);
     } catch (error) {
-      await fs.mkdir(outputFolder, { recursive: true });
+      await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const outputFilePath = path.join(outputFolder, outputFileName);
-
     const htmlOutput = wrapHtml(title, htmlContent);
-      
+    
+    const outputFilePath = path.join(outputFileFolder, outputFileName);
+    
     await fs.writeFile(outputFilePath, htmlOutput);
 
     console.log(`Conversion complete! Output saved to ${outputFilePath}`);
@@ -79,13 +79,18 @@ export const fileToHtml = async (inputFile, outputFolder = './dist/', options = 
 };
 
 // Load Markdown file and convert it to HTML
-export const markdownToHtml = async (inputPattern, outputFolder, options = {}) => {
+export const processFolder = async (inputFolder, outputFolder, options = {}) => {
   try {
     const globOptions = {
       cwd: process.cwd(),
     };
-    const files = await glob(inputPattern, globOptions);
-    await Promise.all(files.map(file => fileToHtml(file, outputFolder, options)));
+    const inputGlob = path.join(inputFolder, '**/*.md');
+    const files = await glob(inputGlob, globOptions);
+    await Promise.all(files.map(file => {
+      const relativePath = path.relative(inputFolder, file);
+      const outputFileFolder = path.join(outputFolder, path.dirname(relativePath));
+      return fileToHtml(file, outputFileFolder, options);
+    }));
   } catch (err) {
     console.error('Error converting Markdown to HTML:', err);
   }

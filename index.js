@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { markdownToHtml } from './src/main.js';
+import { processFolder } from './src/main.js';
 import yargs from 'yargs';
 import chalk from 'chalk';
 
@@ -28,4 +28,4 @@ const argv = yargs(hideBin(process.argv))
 console.log(chalk.blue('Matching .md files from directory: '), chalk.green(argv.directoryPath));
 console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
 
-markdownToHtml(argv.directoryPath, argv.output, { tags: argv.tags });
+processFolder(argv.directoryPath, argv.output, { tags: argv.tags });
