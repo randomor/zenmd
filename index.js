@@ -32,8 +32,10 @@ const argv = yargs(hideBin(process.argv))
   })
   .argv;
 
-console.log(chalk.blue('Matching .md files from directory: '), chalk.green(argv.inputFolder));
-console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
+console.log(chalk.blue('Input folder: '), chalk.green(argv.inputFolder));
+if (argv.tags) {
+  console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
+}
 console.log(chalk.blue('Output folder: '), chalk.green(argv.outputFolder));
 
 const startProcessing = async () => {

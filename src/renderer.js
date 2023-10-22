@@ -4,6 +4,7 @@ import matter from 'gray-matter';
 import path from 'path';
 import mustache from 'mustache';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk';
 
 const configRenderer = (currentFile, imageDir = 'assets') => {
   // Create a custom renderer
@@ -44,7 +45,7 @@ const configRenderer = (currentFile, imageDir = 'assets') => {
 }
 
 export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
-  console.log("Converting: ", inputFile, outputFileFolder);
+  chalk.blue("Converting: ", inputFile, outputFileFolder);
   try {
     const data = await fs.readFile(inputFile, 'utf8');
 
@@ -56,8 +57,10 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
     const htmlContent = marked(parsedMarkdown.content);
     const frontMatter = parsedMarkdown.data;
 
-    // Log Front Matter to Console
-    console.log('Front Matter:', frontMatter);
+    // if frontMatter is not empty, log it with chalk
+    if (Object.keys(frontMatter).length > 0) {
+      console.log(chalk.blueBright('Front Matter:'), frontMatter);
+    }
 
     const inputFileName = path.parse(inputFile).name;
 
@@ -77,9 +80,9 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
     
     await fs.writeFile(outputFilePath, htmlOutput);
 
-    console.log(`Conversion complete! Output saved to ${outputFilePath}`);
+    console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));
   } catch (err) {
-    console.error(`Error processing file ${inputFile}:`, err);
+    console.error(chalk.red(`Error processing file ${inputFile}:`), err);
   }
 };
 
@@ -90,6 +93,5 @@ const renderHtml = async (templatePath, { title, content }) => {
   templatePath = templatePath || path.join(__dirname, './static/default_layout.html');
   const template = await fs.readFile(templatePath, 'utf8');
   const rendered = mustache.render(template, { title, content });
-  console.log("render complete");
   return rendered;
 };
