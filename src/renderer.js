@@ -37,12 +37,29 @@ export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => 
     return `<a href="${targetHref}" title="${title || text}">${text}</a>`;
   };
 
-  renderer.text= function (text) {
-    const regex = /\[\[(.*?)\]\]/g;
-    return text.replace(regex, (match, p1) => `<a href="/${p1}.html">${p1}</a>`);
-  }
-
   marked.setOptions({ renderer });
+
+  const wikiLink = {
+    name: 'wikiLink',
+    level: 'inline', // It is an inline-level tokenizer
+    start(src) { return src.match(/\[\[/)?.index; }, // Check for the existence of "[[" to start the matching
+    tokenizer(src, tokens) {
+      const rule = /^\[\[(.*?)\]\]/; // Regular expression to capture the wiki link
+      const match = rule.exec(src);
+      if (match) {
+        return { // Token to generate
+          type: 'wikiLink', // Should match "name" above
+          raw: match[0], // Text matched by the tokenizer
+          text: match[1].trim(), // Captured group inside the [[]]
+        };
+      }
+    },
+    renderer(token) {
+      return `<a href="/${token.text}.html">${token.text}</a>`; // How the wiki link will be converted to HTML
+    },
+  };
+
+  marked.use({ extensions: [wikiLink] });
 
   return marked;
 }
