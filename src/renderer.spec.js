@@ -64,4 +64,14 @@ describe("fileToHtml", () => {
     const renderedWithRightLink = fileContent.includes('nested.html');
     assert(renderedWithRightLink);
   });
+
+  it("renders relative link to image with right path", async () => {
+    const sourceFile = './src/__test__/second level/nested.md';
+    const outputFolder = './dist/second level/';
+    await fileToHtml(sourceFile, outputFolder, {})
+    const resultFile = './dist/second level/nested.html';
+    const fileContent = await fs.readFile(resultFile, 'utf-8');
+    const renderedWithRightImageLink = fileContent.includes('testImage.webp');
+    assert(renderedWithRightImageLink);
+  });
 });

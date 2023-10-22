@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import { marked } from 'marked';
 import matter from 'gray-matter';
 import path from 'path';
@@ -6,31 +7,26 @@ import mustache from 'mustache';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 
-const configRenderer = (currentFile, imageDir = 'assets') => {
+const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
   // Create a custom renderer
   const renderer = new marked.Renderer();
 
   // Override the image renderer
-  // renderer.image = async function (href, title, text) {
-  //   // Prepend 'assets/' to the image path
-  //   const targetHref = path.join(imageDir, href);
-  //   const outputDir = path.join('./dist/', imageDir);
-  //   // Create the output directory if it doesn't exist
-  //   try {
-  //     await fs.access(outputDir);
-  //   } catch (error) {
-  //     await fs.mkdir(outputDir, { recursive: true });
-  //   }
-  //   const outputFolder = path.join('./dist/', imageDir, href);
+  renderer.image = (href, title, text) => {
+    const targetHref = path.join(imageDir, href);
+    // Create the output directory if it doesn't exist
+    const outputPath = path.join(outputFileFolder, imageDir, href);
+    
+    fsSync.mkdirSync(path.dirname(outputPath), { recursive: true });
+    // Get current file's directory
+    const currentFileDir = path.dirname(currentFile);
+    // Get the relative path from the current file to the image
+    const imagePath = path.join(currentFileDir, href);
 
-  //   // Get current file's directory
-  //   const currentFileDir = path.dirname(currentFile);
-  //   // Get the relative path from the current file to the image
-  //   const imagePath = path.join(currentFileDir, href);
-
-  //   await fs.cp(imagePath, outputFolder);
-  //   return `<img src="${targetHref}" alt="${text}" title="${title || text}">`;
-  // };
+    // has to be sync as marked doesn't support async
+    fsSync.copyFileSync(imagePath, outputPath);
+    return `<img src="./${targetHref}" alt="${text}" title="${title || text}">`;
+  };
 
   // Override the link renderer
   renderer.link = function (href, title, text) {
@@ -51,7 +47,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
 
     const parsedMarkdown = matter(data);
       
-    await configRenderer(inputFile);
+    await configRenderer(inputFile, outputFileFolder);
 
     // Convert Markdown to HTML using marked
     const htmlContent = marked(parsedMarkdown.content);
