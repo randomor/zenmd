@@ -20,19 +20,18 @@ _One single command to transform a directory of .md files into a static site._
 
   - **Command**: 
     ```bash
-    npx add
-    ```~
+    npx add marxt
+    ```
   
 ## Readme
 
 Getting started with `marxt` is as easy as one, two!
 
-### Step 1: Initialization
-
-Execute 
-```bash
-npx marxt docs --output dist
-```
+1. Generate site
+  ```bash
+  npx marxt docs --output dist
+  ```
+2. Drag and drop the generated folder into Netlify
 
 ### Core Process
 - Find all mark down docs under input folder
