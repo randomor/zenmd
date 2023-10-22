@@ -1,8 +1,7 @@
 import fs from 'fs/promises';
 import assert from 'node:assert';
 import { describe, it, beforeEach } from 'node:test';
-import { fileToHtml } from "./renderer.js";
-
+import { fileToHtml, configRenderer } from "./renderer.js";
 
 describe("fileToHtml", () => {
   beforeEach(async () => await fs.rm('./dist', { recursive: true, force: true }));
@@ -73,5 +72,15 @@ describe("fileToHtml", () => {
     const fileContent = await fs.readFile(resultFile, 'utf-8');
     const renderedWithRightImageLink = fileContent.includes('testImage.webp');
     assert(renderedWithRightImageLink);
+  });
+});
+
+describe("configRenderer", () => {
+  it("configures renderer with right image path", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const outputFolder = './dist';
+    const marked = configRenderer(sourceFile, outputFolder);
+    const html = marked('[[Home]]'); // Should render <a href="/Home">Home</a>
+    assert.equal(html, '<p><a href="/Home.html">Home</a></p>\n');
   });
 });

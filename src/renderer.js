@@ -7,7 +7,8 @@ import mustache from 'mustache';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 
-const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
+export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
+  
   // Create a custom renderer
   const renderer = new marked.Renderer();
 
@@ -16,7 +17,7 @@ const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
     const targetHref = path.join(imageDir, href);
     // Create the output directory if it doesn't exist
     const outputPath = path.join(outputFileFolder, imageDir, href);
-    
+
     fsSync.mkdirSync(path.dirname(outputPath), { recursive: true });
     // Get current file's directory
     const currentFileDir = path.dirname(currentFile);
@@ -36,8 +37,14 @@ const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
     return `<a href="${targetHref}" title="${title || text}">${text}</a>`;
   };
 
-  // Use the custom renderer
+  renderer.text= function (text) {
+    const regex = /\[\[(.*?)\]\]/g;
+    return text.replace(regex, (match, p1) => `<a href="/${p1}.html">${p1}</a>`);
+  }
+
   marked.setOptions({ renderer });
+
+  return marked;
 }
 
 export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
