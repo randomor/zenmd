@@ -65,7 +65,8 @@ const startProcessing = async () => {
 }
 
 const outputFolderExists = await fileExists(argv.output);
-const needsToConfirm = outputFolderExists || argv.force || await folderEmpty(argv.output);  
+
+const needsToConfirm = !(argv.force || !outputFolderExists || await folderEmpty(argv.output));
 
 if (needsToConfirm) {
   const rl = readline.createInterface({
