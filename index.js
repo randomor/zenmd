@@ -7,6 +7,10 @@ import fs from 'fs/promises';
 
 import { hideBin } from 'yargs/helpers';
 
+const fileExists = async (path) => {
+  return await fs.access(path).then(() => true).catch(() => false);
+};
+
 const argv = yargs(hideBin(process.argv))
   .command('$0 [inputFolder]', 'default command', (yargs) => {
     yargs.positional('inputFolder', {
@@ -39,9 +43,14 @@ if (argv.tags) {
 console.log(chalk.blue('Output folder: '), chalk.green(argv.outputFolder));
 
 const startProcessing = async () => {
-  // erase output folder
-  await fs.rm(argv.outputFolder, { recursive: true });
-  
+  // create output folder if doesn't exist, other wise erase output folder
+  const isFileExists = await fileExists(argv.outputFolder);
+  if (!isFileExists) {
+    await fs.mkdir(argv.outputFolder, { recursive: true });
+  } else {
+    await fs.rm(argv.outputFolder, { recursive: true });
+  }
+
   const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(':'));
   await processFolder(argv.inputFolder, argv.outputFolder, { tags: tagsKeyValue });
 }
