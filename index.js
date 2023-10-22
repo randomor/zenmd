@@ -11,6 +11,15 @@ const fileExists = async (path) => {
   return await fs.access(path).then(() => true).catch(() => false);
 };
 
+const folderEmpty = async (p) => {
+  try {
+    const outputFiles = await fs.readdir(p);  
+    return outputFiles.length === 0;
+  } catch {
+    return false
+  }
+};
+
 const argv = yargs(hideBin(process.argv))
   .command('$0 [inputFolder]', 'default command', (yargs) => {
     yargs.positional('inputFolder', {
@@ -18,7 +27,7 @@ const argv = yargs(hideBin(process.argv))
       default: './docs',
     })
   })
-  .option('outputFolder', {
+  .option('output', {
     alias: 'o',
     type: 'string',
     describe: 'Output folder path',
@@ -40,43 +49,42 @@ console.log(chalk.blue('Input folder: '), chalk.green(argv.inputFolder));
 if (argv.tags) {
   console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
 }
-console.log(chalk.blue('Output folder: '), chalk.green(argv.outputFolder));
+console.log(chalk.blue('Output folder: '), chalk.green(argv.output));
 
 const startProcessing = async () => {
   // create output folder if doesn't exist, other wise erase output folder
-  const isFileExists = await fileExists(argv.outputFolder);
+  const isFileExists = await fileExists(argv.output);
   if (!isFileExists) {
-    await fs.mkdir(argv.outputFolder, { recursive: true });
+    await fs.mkdir(argv.output, { recursive: true });
   } else {
-    await fs.rm(argv.outputFolder, { recursive: true });
+    await fs.rm(argv.output, { recursive: true });
   }
 
   const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(':'));
-  await processFolder(argv.inputFolder, argv.outputFolder, { tags: tagsKeyValue });
+  await processFolder(argv.inputFolder, argv.output, { tags: tagsKeyValue });
 }
 
-if (argv.force) {
-  await startProcessing();
-} else {
-  // Check if output folder is empty, if not, ask for confirmation before erasing it
-  const outputFolderFiles = await fs.readdir(argv.outputFolder);
-  if (outputFolderFiles.length > 0) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-    rl.question(
-      chalk.red(
-        `Output folder ${argv.outputFolder} is not empty, do you want to continue? (y/n) `
-      ),
-      async (answer) => {
-        if (answer !== 'y') {
-          console.log(chalk.red('Exiting...'));
-          process.exit(1);
-        }
-        rl.close();
-        await startProcessing();
+const outputFolderExists = await fileExists(argv.output);
+const needsToConfirm = outputFolderExists || argv.force || await folderEmpty(argv.output);  
+
+if (needsToConfirm) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  rl.question(
+    chalk.red(
+      `Output folder ${argv.output} is not empty, do you want to continue? (y/n) `
+    ),
+    async (answer) => {
+      if (answer !== 'y') {
+        console.log(chalk.red('Exiting...'));
+        process.exit(1);
       }
-    );
-  }
+      rl.close();
+      await startProcessing();
+    }
+  );
+} else {
+  await startProcessing();
 };
