@@ -1,8 +1,8 @@
 {
-  "name": "marxt",
+  "name": "zenmd",
   "version": "0.0.1",
   "bin": {
-    "marxt": "./index.js"
+    "zenmd": "./index.js"
   },
   "type": "module",
   "scripts": {

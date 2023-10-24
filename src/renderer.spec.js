@@ -49,7 +49,7 @@ describe("fileToHtml", () => {
       await fileToHtml(sourceFile, outputFolder, {})
       const resultFile = './dist/example.html';
       const fileContent = await fs.readFile(resultFile, 'utf-8');
-      const renderedFromDefaultLayout = fileContent.includes('Marxt');
+      const renderedFromDefaultLayout = fileContent.includes('zenmd');
       assert(renderedFromDefaultLayout);
     });
   });

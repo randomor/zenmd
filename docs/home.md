@@ -1,8 +1,7 @@
 ---
 title: Read Me
-publish: true
 ---
-# marxt
+# ZenMD
 
 ## Tagline
 
@@ -20,16 +19,16 @@ _One single command to transform a directory of .md files into a static site._
 
   - **Command**: 
     ```bash
-    npx add marxt
+    npx add zenmd
     ```
   
 ## Readme
 
-Getting started with `marxt` is as easy as one, two!
+Getting started with `zenmd` is as easy as one, two!
 
 1. Generate site
   ```bash
-  npx marxt docs --output dist
+  npx zenmd docs --output dist
   ```
 2. Drag and drop the generated folder into Netlify
 
