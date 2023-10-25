@@ -5,6 +5,9 @@
     "zenmd": "./index.js"
   },
   "type": "module",
+  "engines": {
+    "node": ">=21.0.0"
+  },
   "scripts": {
     "start": "node index.js",
     "test": "node --test --test-concurrency=1 **/*.spec.js"
