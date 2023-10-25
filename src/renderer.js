@@ -3,6 +3,7 @@ import { remark } from 'remark';
 import remarkHtml from 'remark-html';
 import remarkWikiLink from 'remark-wiki-link';
 import remarkFrontmatter from 'remark-frontmatter';
+import remarkParseFrontmatter from 'remark-parse-frontmatter'
 import path from 'path';
 import mustache from 'mustache';
 import { fileURLToPath } from 'url';
@@ -13,6 +14,7 @@ import { normalizePath } from './utils.js';
 export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
   const processor = remark()
     .use(remarkFrontmatter, ['yaml'])
+    .use(remarkParseFrontmatter)
     .use(remarkWikiLink, { 
         pageResolver: (name) => [normalizePath(name)],
         hrefTemplate: (permalink) => `${permalink}.html`

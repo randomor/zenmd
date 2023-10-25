@@ -42,7 +42,6 @@ describe("fileToHtml", () => {
       assert(renderedWithLayout, "Layout not found");
     });
 
-
     it("falls to default layout if no layout is found", async () => {
       const sourceFile = './src/__test__/example.md';
       const outputFolder = './dist';
@@ -92,5 +91,14 @@ describe("configRenderer", () => {
       const html = await renderer.process(testCase.input);
       assert.equal(html.value, testCase.expectedOutput);
     }
+  });
+
+  it("picks up front matter", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const outputFolder = './dist';
+    const renderer = configRenderer(sourceFile, outputFolder);
+    const file = await renderer.process('---\ntitle: "Hello World"\n---\n\n# Hello World');
+    const { title } = file.data.frontmatter || {};
+    assert.equal(title, "Hello World");
   });
 });
