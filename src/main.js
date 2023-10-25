@@ -3,6 +3,10 @@ import fs from 'fs/promises';
 import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
 
+const normalizePath = (pathName) => {
+  return pathName.replace(/ /g, '-').trim().toLowerCase();
+}
+
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputFolder, outputFolder, options = {}) => {
   try {
@@ -13,7 +17,7 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
     const files = await glob(inputGlob, globOptions);
     await Promise.all(files.map(async file => {
       const relativePath = path.relative(inputFolder, file);
-      const outputFileFolder = path.join(outputFolder, path.dirname(relativePath));
+      const outputFileFolder = path.join(outputFolder, path.dirname(normalizePath(relativePath)));
       const templatePath = await findLayout(file, inputFolder);
       return fileToHtml(file, outputFileFolder, { templatePath, ...options });
     }));

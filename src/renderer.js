@@ -1,5 +1,4 @@
 import fs from 'fs/promises';
-import fsSync from 'fs';
 import { remark } from 'remark';
 import remarkHtml from 'remark-html';
 import remarkWikiLink from 'remark-wiki-link';
@@ -10,21 +9,29 @@ import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import {visit} from 'unist-util-visit';
 
+const pageNameToFileName = (pageName) => {
+  return pageName.replace(/ /g, '-').trim().toLowerCase();
+}
+
 export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
   const processor = remark()
     .use(remarkFrontmatter, ['yaml'])
-    .use(remarkWikiLink)
+    .use(remarkWikiLink, { 
+        pageResolver: (name) => [pageNameToFileName(name)],
+        hrefTemplate: (permalink) => `${permalink}.html`
+    })
     .use(() => (tree) => {
-      visit(tree, 'image', (node) => {
+      visit(tree, 'image', async (node) => {
         const targetHref = path.join(imageDir, node.url);
         const outputPath = path.join(outputFileFolder, imageDir, node.url);
-        fsSync.mkdirSync(path.dirname(outputPath), { recursive: true });
+        await fs.mkdir(path.dirname(outputPath), { recursive: true });
         const currentFileDir = path.dirname(currentFile);
         const imagePath = path.join(currentFileDir, node.url);
-        fsSync.copyFileSync(imagePath, outputPath);
+        await fs.copyFile(imagePath, outputPath);
         node.url = `./${targetHref}`;
       });
       visit(tree, 'link', (node) => {
+        // all relative path to .md will just be simply replaced with .html
         if (node.url.startsWith('.') && node.url.endsWith('.md')) {
           node.url = node.url.replace('.md', '.html');
         }
@@ -48,7 +55,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       console.log(chalk.blueBright('Front Matter:'), frontMatter);
     }
 
-    const inputFileName = path.parse(inputFile).name;
+    const inputFileName = pageNameToFileName(path.parse(inputFile).name);
     const outputFileName = `${inputFileName}.html`;
 
     try {

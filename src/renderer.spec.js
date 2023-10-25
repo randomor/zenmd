@@ -20,9 +20,9 @@ describe("fileToHtml", () => {
 
   it("converts second level file to html with right path", async () => {
     const sourceFile = './src/__test__/second\ level/nested.md';
-    const outputFolder = './dist/second level/';
+    const outputFolder = './dist/second-level/';
     await fileToHtml(sourceFile, outputFolder, {})
-    const resultFile = './dist/second level/nested.html';
+    const resultFile = './dist/second-level/nested.html';
     const fileExists = await fs.access(resultFile)
       .then(() => true)
       .catch(() => false);
@@ -49,7 +49,7 @@ describe("fileToHtml", () => {
       await fileToHtml(sourceFile, outputFolder, {})
       const resultFile = './dist/example.html';
       const fileContent = await fs.readFile(resultFile, 'utf-8');
-      const renderedFromDefaultLayout = fileContent.includes('zenmd');
+      const renderedFromDefaultLayout = fileContent.includes('ZenMD');
       assert(renderedFromDefaultLayout);
     });
   });
@@ -76,11 +76,21 @@ describe("fileToHtml", () => {
 });
 
 describe("configRenderer", () => {
-  it("configures renderer with right image path", async () => {
+  const testCases = [
+    { input: '[[Home]]', expectedOutput: '<p><a href="home.html">Home</a></p>\n' },
+    { input: '[[About US]]', expectedOutput: '<p><a href="about-us.html">About US</a></p>\n' },
+    { input: '[[About_US]]', expectedOutput: '<p><a href="about_us.html">About_US</a></p>\n' },
+    { input: '[[About US:About]]', expectedOutput: '<p><a href="about-us.html">About</a></p>\n' },
+  ];
+
+  it("configures renderer with right path", async () => {
     const sourceFile = './src/__test__/example.md';
     const outputFolder = './dist';
-    const marked = configRenderer(sourceFile, outputFolder);
-    const html = marked('[[Home]]'); // Should render <a href="/Home">Home</a>
-    assert.equal(html, '<p><a href="/Home.html">Home</a></p>\n');
+    const renderer = configRenderer(sourceFile, outputFolder);
+
+    for (const testCase of testCases) {
+      const html = await renderer.process(testCase.input);
+      assert.equal(html.value, testCase.expectedOutput);
+    }
   });
 });

@@ -12,8 +12,8 @@ describe("processFolder", () => {
     await processFolder(inputFolder, outputFolder);
     const fileList = [
       './dist/example.html',
-      './dist/second level/nested.html',
-      './dist/second level/nested with space.html',
+      './dist/second-level/nested.html',
+      './dist/second-level/nested-with-space.html',
     ];
 
     for (const file of fileList) {
