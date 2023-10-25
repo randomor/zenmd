@@ -1,8 +1,7 @@
 import path from 'path';
-import fs from 'fs/promises';
 import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
-import { normalizePath } from './utils.js';
+import { normalizePath, fileExists } from './utils.js';
 
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputFolder, outputFolder, options = {}) => {
@@ -24,16 +23,6 @@ export const processFolder = async (inputFolder, outputFolder, options = {}) => 
 };
 
 async function findLayout(currentFile, inputFolder, layoutName = 'layout.html') {
-  // Helper function to check file existence
-  async function fileExists(filePath) {
-    try {
-      await fs.access(filePath);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
   let currentDir = currentFile;
   do {
     currentDir = path.dirname(currentDir);
