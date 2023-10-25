@@ -8,16 +8,13 @@ import mustache from 'mustache';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import {visit} from 'unist-util-visit';
-
-const pageNameToFileName = (pageName) => {
-  return pageName.replace(/ /g, '-').trim().toLowerCase();
-}
+import { normalizePath } from './utils.js';
 
 export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
   const processor = remark()
     .use(remarkFrontmatter, ['yaml'])
     .use(remarkWikiLink, { 
-        pageResolver: (name) => [pageNameToFileName(name)],
+        pageResolver: (name) => [normalizePath(name)],
         hrefTemplate: (permalink) => `${permalink}.html`
     })
     .use(() => (tree) => {
@@ -55,7 +52,7 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
       console.log(chalk.blueBright('Front Matter:'), frontMatter);
     }
 
-    const inputFileName = pageNameToFileName(path.parse(inputFile).name);
+    const inputFileName = normalizePath(path.parse(inputFile).name);
     const outputFileName = `${inputFileName}.html`;
 
     try {

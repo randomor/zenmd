@@ -2,10 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
-
-const normalizePath = (pathName) => {
-  return pathName.replace(/ /g, '-').trim().toLowerCase();
-}
+import { normalizePath } from './utils.js';
 
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputFolder, outputFolder, options = {}) => {
