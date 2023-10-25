@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 
 export const normalizePath = (pathName) => {
-  return pathName.replace(/ /g, '-').trim().toLowerCase();
+  return pathName.trim().replace(/(\s|%20)/g, '-').toLowerCase();
 }
 
 export const fileExists = async (filePath) => {

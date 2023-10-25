@@ -30,7 +30,7 @@ export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => 
       visit(tree, 'link', (node) => {
         // all relative path to .md will just be simply replaced with .html
         if (node.url.startsWith('.') && node.url.endsWith('.md')) {
-          node.url = node.url.replace('.md', '.html');
+          node.url = normalizePath(node.url).replace('.md', '.html');
         }
       });
     })
