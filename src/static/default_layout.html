@@ -15,7 +15,15 @@
       display: inline-block;
       margin-left: 0.2em;  /* Adjust margin as needed */
       vertical-align: middle;  /* This aligns the icon with the text */
-  }
+    }
+    /* But we don't want it to show up on H1, which is a bit too much */
+    h1 .icon.icon-link {
+      width: auto;
+      height: auto;
+      background-color: transparent;
+      border-radius: 0;
+      margin-left: 0;
+    }
   </style>
 </head>
 <body class="bg-white dark:bg-gray-900">
