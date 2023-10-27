@@ -1,6 +1,9 @@
 import fs from 'fs/promises';
 import { remark } from 'remark';
-import remarkHtml from 'remark-html';
+import remarkRehype from 'remark-rehype';
+import rehypeSlug from 'rehype-slug'
+import rehypeStringify from 'rehype-stringify';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import remarkWikiLink from 'remark-wiki-link';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkParseFrontmatter from 'remark-parse-frontmatter'
@@ -36,7 +39,12 @@ export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => 
         }
       });
     })
-    .use(remarkHtml);
+    .use(remarkRehype)
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings, {
+        behavior: 'append'
+      })
+    .use(rehypeStringify);
 
   return processor;
 };
