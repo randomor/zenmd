@@ -1,45 +1,36 @@
 import { processFolder } from "./main.js";
 import fs from 'fs/promises';
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 
-describe("processFolder", () => {
+describe.only("processFolder", () => {
+  const inputFolder = "./src/__test__";
   const outputFolder = './dist';
   beforeEach(async () => await fs.rm(outputFolder, { recursive: true, force: true }));
 
   it("picks markdown and convert", async () => { 
-    const inputFolder = "./src/__test__";
-    await processFolder(inputFolder, outputFolder);
+
+    const render = mock.fn((_) => true );
+
+    await processFolder(inputFolder, outputFolder, { render });
     const fileList = [
-      './dist/example.html',
-      './dist/second-level/nested.html',
-      './dist/second-level/nested-with-space.html',
+      'src/__test__/example.md',
+      'src/__test__/second level/nested.md',
+      'src/__test__/second level/nested with space.md',
     ];
 
-    for (const file of fileList) {
-      try {
-        await fs.access(file);
-        assert.ok(true);
-      } catch (error) {
-        throw new Error(`File ${file} does not exist`);
-      }
-    }
+    assert.strictEqual(render.mock.calls.length, 3);
+    fileList.forEach((file, index) => {
+      assert.strictEqual(render.mock.calls[index].arguments[0], file);
+    })
   });
 
-  it("support individual file", async () => {
-    const inputArg = "./README.md";
-    await processFolder(inputArg, outputFolder);
-    const fileList = [
-      './dist/readme.html',
-    ];
-
-    for (const file of fileList) {
-      try {
-        await fs.access(file);
-        assert.ok(true);
-      } catch (error) {
-        throw new Error(`File ${file} does not exist`);
-      }
-    }
+  it.only("support individual file", async () => {
+    const inputArg = "README.md";
+    const render = mock.fn((_) => true );
+    await processFolder(inputArg, outputFolder, { render});
+    
+    assert.strictEqual(render.mock.calls.length, 1);
+    assert.strictEqual(render.mock.calls[0].arguments[0], inputArg);
   });
 });
