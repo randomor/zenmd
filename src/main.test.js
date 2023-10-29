@@ -25,4 +25,21 @@ describe("processFolder", () => {
       }
     }
   });
+
+  it("support individual file", async () => {
+    const inputArg = "./README.md";
+    await processFolder(inputArg, outputFolder);
+    const fileList = [
+      './dist/readme.html',
+    ];
+
+    for (const file of fileList) {
+      try {
+        await fs.access(file);
+        assert.ok(true);
+      } catch (error) {
+        throw new Error(`File ${file} does not exist`);
+      }
+    }
+  });
 });

@@ -4,12 +4,14 @@ import { fileToHtml } from './renderer.js';
 import { normalizePath, fileExists } from './utils.js';
 
 // Load Markdown file and convert it to HTML
-export const processFolder = async (inputFolder, outputFolder, options = {}) => {
+export const processFolder = async (inputArg, outputFolder, options = {}) => {
   try {
     const globOptions = {
       cwd: process.cwd(),
     };
-    const inputGlob = path.join(inputFolder, '**/*.md');
+    const isFileArg = inputArg.endsWith('.md');
+    const inputFolder = isFileArg ? path.dirname(inputArg) : inputArg;
+    const inputGlob = isFileArg ? inputArg : path.join(inputFolder, '**/*.md');
     const files = await glob(inputGlob, globOptions);
     await Promise.all(files.map(async file => {
       const relativePath = path.relative(inputFolder, file);
