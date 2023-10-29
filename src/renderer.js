@@ -14,12 +14,15 @@ import chalk from 'chalk';
 import {visit} from 'unist-util-visit';
 import { normalizePath } from './utils.js';
 
-export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => {
+export const configRenderer = (currentFile, inputFolder, outputFileFolder, imageDir = '') => {
+
+  const relativePathToInputFolder = path.relative(path.dirname(currentFile), inputFolder);
+
   const processor = remark()
     .use(remarkFrontmatter, ['yaml'])
     .use(remarkParseFrontmatter)
     .use(remarkWikiLink, { 
-        pageResolver: (name) => [normalizePath(name)],
+        pageResolver: (name) => [path.join(relativePathToInputFolder, normalizePath(name))],
         hrefTemplate: (permalink) => `${permalink}.html`
     })
     .use(() => (tree) => {
@@ -49,11 +52,17 @@ export const configRenderer = (currentFile, outputFileFolder, imageDir = '') => 
   return processor;
 };
 
-export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
+export const fileToHtml = async (inputFile, inputFolder, outputFolder, options = {}) => {
+  const relativePath = path.relative(inputFolder, inputFile);
+  const outputFileFolder = path.join(outputFolder, path.dirname(normalizePath(relativePath)));
+  const inputFileName = normalizePath(path.parse(inputFile).name);
+  const outputFileName = `${inputFileName}.html`;
+  const outputFilePath = path.join(outputFileFolder, outputFileName);
+
   chalk.blue("Converting: ", inputFile, outputFileFolder);
   try {
     const data = await fs.readFile(inputFile, 'utf8');
-    const processor = await configRenderer(inputFile, outputFileFolder);
+    const processor = await configRenderer(inputFile, inputFolder, outputFileFolder);
     const file = await processor.process(data);
     const frontMatter = file.data.frontmatter || {};
     const htmlContent = String(file.value);
@@ -61,9 +70,6 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
     if (Object.keys(frontMatter).length > 0) {
       console.log(chalk.blueBright('Front Matter:'), frontMatter);
     }
-
-    const inputFileName = normalizePath(path.parse(inputFile).name);
-    const outputFileName = `${inputFileName}.html`;
 
     try {
       await fs.access(outputFileFolder);
@@ -73,7 +79,6 @@ export const fileToHtml = async (inputFile, outputFileFolder, options = {}) => {
 
     const { templatePath } = options;
     const htmlOutput = await renderHtml(templatePath, {title: 'Untitled', ...frontMatter, content: htmlContent});
-    const outputFilePath = path.join(outputFileFolder, outputFileName);
     await fs.writeFile(outputFilePath, htmlOutput);
 
     console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));
