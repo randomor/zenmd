@@ -10,10 +10,9 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeInferTitleMeta from 'rehype-infer-title-meta'
 import path from 'path';
 import mustache from 'mustache';
-import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import {visit} from 'unist-util-visit';
-import { normalizePath } from './utils.js';
+import { normalizePath, findLayout } from './utils.js';
 
 export const configRenderer = (currentFile, inputFolder, outputFileFolder, imageDir = '') => {
 
@@ -81,7 +80,7 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
 
-    const { templatePath } = options;
+    const templatePath = await findLayout(inputFile, inputFolder);
     const htmlOutput = await renderHtml(templatePath, {title, ...frontMatter, content: htmlContent});
     await fs.writeFile(outputFilePath, htmlOutput);
 
@@ -91,11 +90,7 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
   }
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const renderHtml = async (templatePath, { title, content }) => {
-  templatePath = templatePath || path.join(__dirname, './static/default_layout.html');
   const template = await fs.readFile(templatePath, 'utf8');
   const rendered = mustache.render(template, { title, content });
   return rendered;

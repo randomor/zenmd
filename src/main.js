@@ -1,7 +1,6 @@
 import path from 'path';
 import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
-import { fileExists } from './utils.js';
 
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputArg, outputFolder, options = { render: fileToHtml }) => {
@@ -15,23 +14,9 @@ export const processFolder = async (inputArg, outputFolder, options = { render: 
     const inputGlob = isFileArg ? inputArg : path.join(inputFolder, '**/*.md');
     const files = await glob(inputGlob, globOptions);
     await Promise.all(files.map(async file => {
-      const templatePath = await findLayout(file, inputFolder);
-      return render(file, inputFolder, outputFolder, { templatePath, ...options });
+      return render(file, inputFolder, outputFolder, options);
     }));
   } catch (err) {
     console.error('Error converting Markdown to HTML:', err);
   }
 };
-
-async function findLayout(currentFile, inputFolder, layoutName = 'layout.html') {
-  let currentDir = currentFile;
-  do {
-    currentDir = path.dirname(currentDir);
-    const filePath = path.join(currentDir, layoutName);
-    if (await fileExists(filePath)) {
-      return filePath;
-    }
-  } while (path.resolve(currentDir) !== path.resolve(inputFolder));
-
-  return undefined;
-}

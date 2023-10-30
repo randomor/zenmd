@@ -32,24 +32,13 @@ describe("fileToHtml", () => {
     assert(fileExists);
   });
 
-  describe("renders correct layout", () => {
-    it("renders layout if layout is found", async () => {
-      const sourceFile = './src/__test__/example.md';
-      await fileToHtml(sourceFile, inputFolder, outputFolder, { templatePath: './src/__test__/layout.html' })
-      const resultFile = './dist/example.html';
-      const fileContent = await fs.readFile(resultFile, 'utf-8');
-      const renderedWithLayout = fileContent.includes('layout from root');
-      assert(renderedWithLayout, "Layout not found");
-    });
-
-    it("falls to default layout if no layout is found", async () => {
-      const sourceFile = './src/__test__/example.md';
-      await fileToHtml(sourceFile, inputFolder, outputFolder, {})
-      const resultFile = './dist/example.html';
-      const fileContent = await fs.readFile(resultFile, 'utf-8');
-      const renderedFromDefaultLayout = fileContent.includes('ZenMD');
-      assert(renderedFromDefaultLayout);
-    });
+  it("renders layout if layout is found", async () => {
+    const sourceFile = './src/__test__/example.md';
+    await fileToHtml(sourceFile, inputFolder, outputFolder)
+    const resultFile = './dist/example.html';
+    const fileContent = await fs.readFile(resultFile, 'utf-8');
+    const renderedWithLayout = fileContent.includes('layout from root');
+    assert(renderedWithLayout, "Layout not found");
   });
 
   it("renders relative link to .md with right path", async () => {
