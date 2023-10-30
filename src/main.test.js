@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import { describe, it, beforeEach, mock } from 'node:test';
 import assert from 'node:assert';
 
-describe.only("processFolder", () => {
+describe("processFolder", () => {
   const inputFolder = "./src/__test__";
   const outputFolder = './dist';
   beforeEach(async () => await fs.rm(outputFolder, { recursive: true, force: true }));
@@ -25,8 +25,8 @@ describe.only("processFolder", () => {
     })
   });
 
-  it.only("support individual file", async () => {
-    const inputArg = "README.md";
+  it("supports individual file", async () => {
+    const inputArg = "src/__test__/second level/nested.md";
     const render = mock.fn((_) => true );
     await processFolder(inputArg, outputFolder, { render});
     

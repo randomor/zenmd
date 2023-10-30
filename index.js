@@ -21,9 +21,9 @@ const folderEmpty = async (p) => {
 };
 
 const argv = yargs(hideBin(process.argv))
-  .command('$0 [inputFolder]', 'default command', (yargs) => {
-    yargs.positional('inputFolder', {
-      describe: 'Input folder path',
+  .command('$0 [input]', 'default command', (yargs) => {
+    yargs.positional('input', {
+      describe: 'Input folder path or file path',
       default: './docs',
     })
   })
@@ -45,7 +45,7 @@ const argv = yargs(hideBin(process.argv))
   })
   .argv;
 
-console.log(chalk.blue('Input folder: '), chalk.green(argv.inputFolder));
+console.log(chalk.blue('Input: '), chalk.green(argv.input));
 if (argv.tags) {
   console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
 }
@@ -61,7 +61,7 @@ const startProcessing = async () => {
   }
 
   const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(':'));
-  await processFolder(argv.inputFolder, argv.output, { tags: tagsKeyValue });
+  await processFolder(argv.input, argv.output, { tags: tagsKeyValue });
 }
 
 const outputFolderExists = await fileExists(argv.output);

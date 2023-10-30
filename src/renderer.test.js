@@ -101,9 +101,9 @@ describe("configRenderer", () => {
     it("renders wikilink with right relative path", async () => {
       const sourceFile = './src/__test__/second level/nested.md';
       const renderer = configRenderer(sourceFile, inputFolder, outputFolder);
-      const file = await renderer.process('[[Hello]]');
+      const file = await renderer.process('[[Example]]');
       const { value } = file;
-      assert.match(value, /href="..\/hello.html"/);
+      assert.match(value, /href="..\/example.html"/);
     });
 
     // it.only("renders relative wikilink", async () => {

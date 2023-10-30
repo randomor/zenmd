@@ -10,7 +10,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test --test-concurrency=1 **/*.spec.js"
+    "test": "node --test --test-concurrency=1"
   },
   "dependencies": {
     "chalk": "^5.3.0",
