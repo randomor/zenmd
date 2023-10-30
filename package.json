@@ -1,16 +1,24 @@
 {
   "name": "zenmd",
+  "description": "The simplest way to transform a directory of .md files into a static site.",
+  "keywords": [
+    "markdown",
+    "wiki",
+    "obsidian",
+    "static site generator",
+    "ssg"
+  ],
   "version": "0.0.2",
   "bin": {
     "zenmd": "./index.js"
   },
   "type": "module",
   "engines": {
-    "node": ">=21.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test --test-concurrency=1"
+    "test": "node --test"
   },
   "dependencies": {
     "chalk": "^5.3.0",
