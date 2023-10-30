@@ -3,6 +3,8 @@ title: Read Me
 ---
 # ZenMD
 
+_Beta software: expect bugs and break changes..._
+
 ## Tagline
 _The simplest way to transform a directory of .md files into a static site._
 
