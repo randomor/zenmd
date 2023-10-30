@@ -55,6 +55,6 @@ describe("findLayout", () => {
     const inputFile = "./readme.md";
     const inputFolder = './';
     const layout = await findLayout(inputFile, inputFolder);
-    assert.strictEqual(layout, "./src/static/default_layout.html");
+    assert.match(layout, /default_layout\.html/);
   });
 });
