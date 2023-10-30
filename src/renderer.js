@@ -1,12 +1,13 @@
 import fs from 'fs/promises';
 import { remark } from 'remark';
 import remarkRehype from 'remark-rehype';
-import rehypeSlug from 'rehype-slug'
-import rehypeStringify from 'rehype-stringify';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import remarkWikiLink from 'remark-wiki-link';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkParseFrontmatter from 'remark-parse-frontmatter'
+import rehypeSlug from 'rehype-slug'
+import rehypeStringify from 'rehype-stringify';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeInferTitleMeta from 'rehype-infer-title-meta'
 import path from 'path';
 import mustache from 'mustache';
 import { fileURLToPath } from 'url';
@@ -47,6 +48,7 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
     .use(rehypeAutolinkHeadings, {
         behavior: 'append'
       })
+    .use(rehypeInferTitleMeta)
     .use(rehypeStringify);
 
   return processor;
@@ -67,6 +69,8 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     const frontMatter = file.data.frontmatter || {};
     const htmlContent = String(file.value);
 
+    const title = file.data.meta.title || frontMatter.title || inputFileName;
+
     if (Object.keys(frontMatter).length > 0) {
       console.log(chalk.blueBright('Front Matter:'), frontMatter);
     }
@@ -78,7 +82,7 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     }
 
     const { templatePath } = options;
-    const htmlOutput = await renderHtml(templatePath, {title: 'Untitled', ...frontMatter, content: htmlContent});
+    const htmlOutput = await renderHtml(templatePath, {title, ...frontMatter, content: htmlContent});
     await fs.writeFile(outputFilePath, htmlOutput);
 
     console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));

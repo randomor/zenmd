@@ -92,8 +92,16 @@ describe("configRenderer", () => {
   it("picks up front matter", async () => {
     const sourceFile = './src/__test__/example.md';
     const renderer = configRenderer(sourceFile, inputFolder, outputFolder);
-    const file = await renderer.process('---\ntitle: "Hello World"\n---\n\n# Hello World');
+    const file = await renderer.process('---\ntitle: "Hello World"\n---\n\n# Hello Sky');
     const { title } = file.data.frontmatter || {};
+    assert.equal(title, "Hello World");
+  });
+
+  it("picks up first H1 if no front matter", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const renderer = configRenderer(sourceFile, inputFolder, outputFolder);
+    const file = await renderer.process('# Hello World');
+    const { title } = file.data.meta || {};
     assert.equal(title, "Hello World");
   });
 
