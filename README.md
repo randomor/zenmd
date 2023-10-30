@@ -21,6 +21,7 @@ _The simplest way to transform a directory of .md files into a static site._
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
 - Filter docs with matching tags `--tags publish:true`
+- Automatically infer title from first H1
 
 ## Get Started
 
