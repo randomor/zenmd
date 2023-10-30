@@ -1,6 +1,3 @@
----
-title: Read Me
----
 # ZenMD
 
 _Beta software: expect bugs and break changes..._
