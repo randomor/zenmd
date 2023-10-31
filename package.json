@@ -31,6 +31,7 @@
     "rehype-stringify": "^10.0.0",
     "remark": "^15.0.1",
     "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
     "remark-parse-frontmatter": "^1.0.3",
     "remark-rehype": "^11.0.0",
     "remark-wiki-link": "^2.0.1",

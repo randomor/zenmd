@@ -1,6 +1,6 @@
 # ZenMD
 
-_Beta software: expect bugs and break changes..._
+_Beta software: expect bugs and breaking changes..._
 
 ## Tagline
 _The simplest way to transform a directory of .md files into a static site._
@@ -15,6 +15,7 @@ _The simplest way to transform a directory of .md files into a static site._
 
 ## Features
 - Transform .md to html
+  - GFM markdown, with all the features supported by [remark-gfm](https://github.com/remarkjs/remark-gfm).
   - Support images in markdown files.
   - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
@@ -38,4 +39,9 @@ Getting started with `zenmd` is as easy as one, two!
 
 ## References
 - Built with [remark](https://github.com/remarkjs/remark)
+- Default theme used [TailwindCSS Typography](https://tailwindcss.com/docs/typography-plugin)
 - Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli)
+
+
+## Who made this?
+Made by [randomor](https://x.com/randomor), who also made [ZenJournal](https://thezenjournal.com) 

@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import { remark } from 'remark';
+import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
 import remarkWikiLink from 'remark-wiki-link';
 import remarkFrontmatter from 'remark-frontmatter';
@@ -25,6 +26,7 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
         pageResolver: (name) => [path.join(relativePathToInputFolder, normalizePath(name))],
         hrefTemplate: (permalink) => `${permalink}.html`
     })
+    .use(remarkGfm)
     .use(() => (tree) => {
       visit(tree, 'image', async (node) => {
         const targetHref = path.join(imageDir, node.url);
