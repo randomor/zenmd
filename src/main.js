@@ -3,7 +3,7 @@ import { glob } from 'glob';
 import { fileToHtml } from './renderer.js';
 
 // Load Markdown file and convert it to HTML
-export const processFolder = async (inputArg, outputFolder, options = { render: fileToHtml }) => {
+export const processFolder = async (inputArg, outputFolder, options = { render: fileToHtml, tags }) => {
   const render = options.render || fileToHtml;
   try {
     const globOptions = {

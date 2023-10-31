@@ -55,7 +55,7 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
   return processor;
 };
 
-export const fileToHtml = async (inputFile, inputFolder, outputFolder, options = {}) => {
+export const fileToHtml = async (inputFile, inputFolder, outputFolder, options = { tags: [] }) => {
   const relativePath = path.relative(inputFolder, inputFile);
   const outputFileFolder = path.join(outputFolder, path.dirname(normalizePath(relativePath)));
   const inputFileName = normalizePath(path.parse(inputFile).name);
@@ -68,6 +68,17 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     const processor = await configRenderer(inputFile, inputFolder, outputFileFolder);
     const file = await processor.process(data);
     const frontMatter = file.data.frontmatter || {};
+
+    // match front matter with tags and return if not match
+    const tags = options.tags || [];
+    if (tags.length > 0) {
+      const matched = tags.every(([key, value]) => frontMatter[key].toString() === value);
+      if (!matched) {
+        console.log(chalk.yellow(`Skipped: ${inputFile}`));
+        return;
+      }
+    }
+
     const htmlContent = String(file.value);
 
     const title = file.data.meta.title || frontMatter.title || inputFileName;

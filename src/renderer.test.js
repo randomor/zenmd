@@ -58,6 +58,26 @@ describe("fileToHtml", () => {
     const renderedWithRightImageLink = fileContent.includes('testImage.webp');
     assert(renderedWithRightImageLink);
   });
+
+  it("skips file if not matching tags", async () => {
+    const sourceFile = './src/__test__/example.md';
+    await fileToHtml(sourceFile, inputFolder, outputFolder, { tags: [["publish", "true"]] })
+    const resultFile = './dist/example.html';
+    const fileExists = await fs.access(resultFile)
+      .then(() => true)
+      .catch(() => false);
+    assert(!fileExists);
+  });
+
+  it("renders file if matching tags", async () => {
+    const sourceFile = './src/__test__/second level/nested.md';
+    await fileToHtml(sourceFile, inputFolder, outputFolder, { tags: [["publish", "true"]] })
+    const resultFile = './dist/second-level/nested.html';
+    const fileExists = await fs.access(resultFile)
+      .then(() => true)
+      .catch(() => false);
+    assert(fileExists);
+  })
 });
 
 describe("configRenderer", () => {

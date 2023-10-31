@@ -33,4 +33,14 @@ describe("processFolder", () => {
     assert.strictEqual(render.mock.calls.length, 1);
     assert.strictEqual(render.mock.calls[0].arguments[0], inputArg);
   });
+
+  it("supports tags", async () => {
+    const inputArg = "src/__test__";
+    const render = mock.fn((_) => true );
+    const tags = [["tag1", "value1"], ["tag2", "value2"]];
+    await processFolder(inputArg, outputFolder, { render, tags });
+    
+    assert.strictEqual(render.mock.calls.length, 3);
+    assert.strictEqual(render.mock.calls[0].arguments[3].tags, tags);
+  })
 });
