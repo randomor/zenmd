@@ -72,7 +72,9 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     // match front matter with tags and return if not match
     const tags = options.tags || [];
     if (tags.length > 0) {
-      const matched = tags.every(([key, value]) => frontMatter[key].toString() === value);
+      const matched = tags.every(([key, value]) => {
+        return frontMatter[key] && frontMatter[key].toString() === value
+      });
       if (!matched) {
         console.log(chalk.yellow(`Skipped: ${inputFile}`));
         return;
