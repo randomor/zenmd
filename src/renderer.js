@@ -44,13 +44,13 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
         }
       });
     })
-    .use(remarkRehype)
+    .use(remarkRehype, {allowDangerousHtml: true})
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings, {
         behavior: 'append'
       })
     .use(rehypeInferTitleMeta)
-    .use(rehypeStringify);
+    .use(rehypeStringify, {allowDangerousHtml: true});
 
   return processor;
 };

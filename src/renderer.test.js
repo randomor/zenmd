@@ -114,6 +114,14 @@ describe("configRenderer", () => {
     assert.equal(title, "Hello World");
   });
 
+  it("renders iframe and html tags by default", async () => {
+    const sourceFile = './src/__test__/example.md';
+    const renderer = configRenderer(sourceFile, inputFolder, outputFolder);
+    const file = await renderer.process('#hi\n\n<iframe src="https://example.com"></iframe>');
+    const { value } = file;
+    assert.match(value, /iframe/);
+  });
+
   describe("wiki link", () => {  
     it("renders wikilink with right relative path", async () => {
       const sourceFile = './src/__test__/second level/nested.md';
