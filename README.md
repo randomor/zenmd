@@ -16,6 +16,7 @@ _The simplest way to transform a directory of .md files into a static site._
 ## Features
 - Transform .md to html
   - GFM markdown, with all the features supported by [remark-gfm](https://github.com/remarkjs/remark-gfm).
+    - That includes table, footnotes, even raw html tags, e.g.: iframe for embeds.
   - Support images in markdown files.
   - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
