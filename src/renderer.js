@@ -29,11 +29,12 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
     .use(remarkGfm)
     .use(() => (tree) => {
       visit(tree, 'image', async (node) => {
-        const targetHref = path.join(imageDir, node.url);
-        const outputPath = path.join(outputFileFolder, imageDir, node.url);
+        const decodedUrl = decodeURI(node.url);
+        const targetHref = path.join(imageDir, decodedUrl);
+        const outputPath = path.join(outputFileFolder, imageDir, decodedUrl);
         await fs.mkdir(path.dirname(outputPath), { recursive: true });
         const currentFileDir = path.dirname(currentFile);
-        const imagePath = path.join(currentFileDir, node.url);
+        const imagePath = path.join(currentFileDir, decodedUrl);
         await fs.copyFile(imagePath, outputPath);
         node.url = `./${targetHref}`;
       });
