@@ -73,10 +73,17 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     // match front matter with tags and return if not match
     const tags = options.tags || [];
     if (tags.length > 0) {
-      const matched = tags.every(([key, value]) => {
-        return frontMatter[key] && frontMatter[key].toString() === value
+      const shouldRender = tags.every(([key, value]) => {
+        if (value === 'true') {
+          return frontMatter[key] && frontMatter[key].toString() === value
+        } else if (value === 'false') {
+          return !frontMatter[key] || frontMatter[key].toString() !== 'true' 
+        } else {
+          return true;
+        }
       });
-      if (!matched) {
+      console.log("Frontmatter::::", frontMatter, tags, shouldRender);
+      if (!shouldRender) {
         console.log(chalk.yellow(`Skipped: ${inputFile}`));
         return;
       }

@@ -78,6 +78,27 @@ describe("fileToHtml", () => {
       .catch(() => false);
     assert(fileExists);
   })
+
+  it("skips files with tag if tags is falseyyyy", async () => {
+    const sourceFile = './src/__test__/second level/nested.md';
+    await fs.mkdir('./dist/second-level', { recursive: true });
+    await fileToHtml(sourceFile, inputFolder, outputFolder, { tags: [["publish", "false"]] })
+    const resultFile = './dist/second-level/nested.html';
+    const fileExists = await fs.access(resultFile)
+      .then(() => true)
+      .catch(() => false);
+    assert(!fileExists);
+  })
+  
+  it("does not skip files if tags doesn't exist", async () => {
+    const sourceFile = './src/__test__/second level/nested with space.md';
+    await fileToHtml(sourceFile, inputFolder, outputFolder, { tags: [["publish", "false"]] })
+    const resultFile = './dist/second-level/nested-with-space.html';
+    const fileExists = await fs.access(resultFile)
+      .then(() => true)
+      .catch(() => false);
+    assert(fileExists);
+  })
 });
 
 describe("configRenderer", () => {
@@ -138,5 +159,5 @@ describe("configRenderer", () => {
     //   const { value } = file;
     //   assert.match(value, /href="\.\/hello.html"/);
     // })
-});
+  });
 });

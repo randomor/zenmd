@@ -47,7 +47,7 @@ const argv = yargs(hideBin(process.argv))
 
 console.log(chalk.blue('Input: '), chalk.green(argv.input));
 if (argv.tags) {
-  console.log(chalk.blue('Filtering matches files by tags: '), chalk.green(argv.tags));
+  console.log(chalk.blue('Filtering match files by tags: '), chalk.green(argv.tags));
 }
 console.log(chalk.blue('Output folder: '), chalk.green(argv.output));
 
