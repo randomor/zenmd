@@ -5,7 +5,8 @@ import remarkRehype from 'remark-rehype';
 import remarkWikiLink from 'remark-wiki-link';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkParseFrontmatter from 'remark-parse-frontmatter'
-import rehypeSlug from 'rehype-slug'
+import rehypeSlug from 'rehype-slug';
+import rehypeRaw from 'rehype-raw';
 import rehypeStringify from 'rehype-stringify';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeInferTitleMeta from 'rehype-infer-title-meta'
@@ -45,8 +46,23 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
         }
       });
     })
-    .use(remarkRehype, {allowDangerousHtml: true})
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
     .use(rehypeSlug)
+    .use(() => (tree) => {
+      visit(tree, ['image', 'element'], async (node) => {
+        if (node.tagName === 'img') {
+          const decodedUrl = decodeURI(node.properties.src);
+          const targetHref = path.join(imageDir, decodedUrl);
+          const outputPath = path.join(outputFileFolder, imageDir, decodedUrl);
+          await fs.mkdir(path.dirname(outputPath), { recursive: true });
+          const currentFileDir = path.dirname(currentFile);
+          const imagePath = path.join(currentFileDir, decodedUrl);
+          await fs.copyFile(imagePath, outputPath);
+          node.properties.src = `./${targetHref}`;
+        }
+      });
+    })
     .use(rehypeAutolinkHeadings, {
         behavior: 'append'
       })
