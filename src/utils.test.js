@@ -58,7 +58,7 @@ describe("findLayout", () => {
   });
 });
 
-describe("isUri", () => {
+describe("isUrl", () => {
   it("returns true if string is a valid URI", () => {
     const uriExamples = [
       "http://example.com",
@@ -67,7 +67,7 @@ describe("isUri", () => {
       "mailto:support@example.com",
     ];
     uriExamples.forEach((uri) => {
-      assert.strictEqual(isUri(uri), true, `Failed for ${uri}`);
+      assert.strictEqual(isUrl(uri), true, `Failed for ${uri}`);
     });
   });
 
@@ -81,7 +81,7 @@ describe("isUri", () => {
       "path.md",
     ];
     notUriExamples.forEach((uri) => {
-      assert.strictEqual(isUri(uri), false, `Failed for ${uri}`);
+      assert.strictEqual(isUrl(uri), false, `Failed for ${uri}`);
     });
   });
 });

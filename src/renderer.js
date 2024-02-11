@@ -14,32 +14,31 @@ import path from 'path';
 import mustache from 'mustache';
 import chalk from 'chalk';
 import {visit} from 'unist-util-visit';
-import { normalizePath, findLayout } from './utils.js';
+import { normalizePath, findLayout, isUrl } from "./utils.js";
 
-export const configRenderer = (currentFile, inputFolder, outputFileFolder, imageDir = '') => {
-
-  const relativePathToInputFolder = path.relative(path.dirname(currentFile), inputFolder);
+export const configRenderer = (
+  currentFile,
+  inputFolder,
+  outputFileFolder,
+  imageDir = ""
+) => {
+  const relativePathToInputFolder = path.relative(
+    path.dirname(currentFile),
+    inputFolder
+  );
 
   const processor = remark()
-    .use(remarkFrontmatter, ['yaml'])
+    .use(remarkFrontmatter, ["yaml"])
     .use(remarkParseFrontmatter)
-    .use(remarkWikiLink, { 
-        pageResolver: (name) => [path.join(relativePathToInputFolder, normalizePath(name))],
-        hrefTemplate: (permalink) => `${permalink}.html`
+    .use(remarkWikiLink, {
+      pageResolver: (name) => [
+        path.join(relativePathToInputFolder, normalizePath(name)),
+      ],
+      hrefTemplate: (permalink) => `${permalink}.html`,
     })
     .use(remarkGfm)
     .use(() => (tree) => {
-      visit(tree, 'image', async (node) => {
-        const decodedUrl = decodeURI(node.url);
-        const targetHref = path.join(imageDir, decodedUrl);
-        const outputPath = path.join(outputFileFolder, imageDir, decodedUrl);
-        await fs.mkdir(path.dirname(outputPath), { recursive: true });
-        const currentFileDir = path.dirname(currentFile);
-        const imagePath = path.join(currentFileDir, decodedUrl);
-        await fs.copyFile(imagePath, outputPath);
-        node.url = `./${targetHref}`;
-      });
-      visit(tree, 'link', (node) => {
+      visit(tree, "link", (node) => {
         // all current domain path (path that begins with `.` or `/`) with extension .md will be replaced with .html
         if (/^[./].*\.md$/.test(node.url)) {
           node.url = normalizePath(node.url).replace(".md", ".html");
@@ -50,8 +49,12 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
     .use(rehypeRaw)
     .use(rehypeSlug)
     .use(() => (tree) => {
-      visit(tree, ['image', 'element'], async (node) => {
-        if (node.tagName === 'img') {
+      visit(tree, ["image", "element"], async (node) => {
+        if (
+          node.tagName === "img" &&
+          node?.properties?.src &&
+          !isUrl(node.properties.src)
+        ) {
           const decodedUrl = decodeURI(node.properties.src);
           const targetHref = path.join(imageDir, decodedUrl);
           const outputPath = path.join(outputFileFolder, imageDir, decodedUrl);
@@ -64,10 +67,10 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
       });
     })
     .use(rehypeAutolinkHeadings, {
-        behavior: 'append'
-      })
+      behavior: "append",
+    })
     .use(rehypeInferTitleMeta)
-    .use(rehypeStringify, {allowDangerousHtml: true});
+    .use(rehypeStringify, { allowDangerousHtml: true });
 
   return processor;
 };
