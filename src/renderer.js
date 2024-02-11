@@ -40,9 +40,9 @@ export const configRenderer = (currentFile, inputFolder, outputFileFolder, image
         node.url = `./${targetHref}`;
       });
       visit(tree, 'link', (node) => {
-        // all relative path to .md will just be simply replaced with .html
-        if (node.url.startsWith('.') && node.url.endsWith('.md')) {
-          node.url = normalizePath(node.url).replace('.md', '.html');
+        // all current domain path (path that begins with `.` or `/`) with extension .md will be replaced with .html
+        if (/^[./].*\.md$/.test(node.url)) {
+          node.url = normalizePath(node.url).replace(".md", ".html");
         }
       });
     })
