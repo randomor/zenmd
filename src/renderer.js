@@ -129,11 +129,13 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     }
 
     const templatePath = await findLayout(inputFile, inputFolder);
-    const htmlOutput = await renderHtml(templatePath, {
+    const pageAttributes = {
       title,
       ...frontMatter,
       content: htmlContent,
-    });
+    };
+
+    const htmlOutput = await renderHtml(templatePath, pageAttributes);
     await fs.writeFile(outputFilePath, htmlOutput);
 
     console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));
