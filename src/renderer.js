@@ -82,10 +82,14 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
   const outputFileName = `${inputFileName}.html`;
   const outputFilePath = path.join(outputFileFolder, outputFileName);
 
-  chalk.blue("Converting: ", inputFile, outputFileFolder);
+  console.log(chalk.blue("Converting: ", inputFile, outputFileFolder));
   try {
-    const data = await fs.readFile(inputFile, 'utf8');
-    const processor = await configRenderer(inputFile, inputFolder, outputFileFolder);
+    const data = await fs.readFile(inputFile, "utf8");
+    const processor = await configRenderer(
+      inputFile,
+      inputFolder,
+      outputFileFolder
+    );
     const file = await processor.process(data);
     const frontMatter = file.data.frontmatter || {};
 
@@ -93,15 +97,17 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     const tags = options.tags || [];
     if (tags.length > 0) {
       const shouldRender = tags.every(([key, value]) => {
-        if (value === 'true') {
-          return frontMatter[key] && frontMatter[key].toString() === value
-        } else if (value === 'false') {
-          return !frontMatter[key] || frontMatter[key].toString() !== 'true' 
+        if (value === "true") {
+          return frontMatter[key] && frontMatter[key].toString() === value;
+        } else if (value === "false") {
+          return !frontMatter[key] || frontMatter[key].toString() !== "true";
         } else {
           return true;
         }
       });
-      console.log("Frontmatter::::", frontMatter, tags, shouldRender);
+      console.log(
+        chalk.yellow("Frontmatter::::", frontMatter, tags, shouldRender)
+      );
       if (!shouldRender) {
         console.log(chalk.yellow(`Skipped: ${inputFile}`));
         return;
@@ -113,7 +119,7 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     const title = file.data.meta.title || frontMatter.title || inputFileName;
 
     if (Object.keys(frontMatter).length > 0) {
-      console.log(chalk.blueBright('Front Matter:'), frontMatter);
+      console.log(chalk.blueBright("Front Matter:"), frontMatter);
     }
 
     try {
@@ -123,7 +129,11 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     }
 
     const templatePath = await findLayout(inputFile, inputFolder);
-    const htmlOutput = await renderHtml(templatePath, {title, ...frontMatter, content: htmlContent});
+    const htmlOutput = await renderHtml(templatePath, {
+      title,
+      ...frontMatter,
+      content: htmlContent,
+    });
     await fs.writeFile(outputFilePath, htmlOutput);
 
     console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));
