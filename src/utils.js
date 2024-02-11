@@ -32,3 +32,12 @@ export const findLayout = async (currentFile, inputFolder, layoutName = 'layout.
 
   return Promise.resolve(defaultLayout);
 }
+
+export const isUrl = (string) => {
+  try {
+    new URL(string);
+  } catch (_) {
+    return false;
+  }
+  return true;
+};
