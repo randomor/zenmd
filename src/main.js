@@ -1,14 +1,15 @@
 import path from 'path';
 import { glob } from 'glob';
-import { parseMarkdown, renderHtmlPage } from "./renderer.js";
+import { renderHtmlPage } from "./renderer.js";
+import { parseMarkdown } from "./parser.js";
 
 // Load Markdown file and convert it to HTML
 export const processFolder = async (
   inputArg,
   outputFolder,
-  options = { render: fileToHtml, tags } //TODO fix render vs parsing here
+  options = { parser: parseMarkdown, tags, sitemap: true }
 ) => {
-  const parse = options.render || parseMarkdown;
+  const parse = options.parser || parseMarkdown;
   try {
     const globOptions = {
       cwd: process.cwd(),
@@ -20,11 +21,11 @@ export const processFolder = async (
 
     const pageAttributesList = await Promise.all(
       files.map(async (file) => {
-        return parse(file, inputFolder, outputFolder);
+        return parse(file, inputFolder, outputFolder, options);
       })
     );
 
-    // Render SiteMap
+    // render SiteMap
     if (options.sitemap) {
       await generateSitemap(pageAttributesList);
     }
