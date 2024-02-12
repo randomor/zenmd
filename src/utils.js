@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename);
 const defaultLayout = path.join(__dirname, './static/default_layout.html');
 
 export const findLayout = async (currentFile, inputFolder, layoutName = 'layout.html') => {
-  
+
   let currentDir = currentFile;
   do {
     currentDir = path.dirname(currentDir);

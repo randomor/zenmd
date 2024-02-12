@@ -151,6 +151,7 @@ export const parseMarkdown = async (
       content: htmlContent,
       frontMatter,
       inputFile,
+      inputFolder,
       outputFileFolder,
       outputFileName,
       outputFilePath,
