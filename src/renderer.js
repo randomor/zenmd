@@ -75,9 +75,17 @@ export const configRenderer = (
   return processor;
 };
 
-export const fileToHtml = async (inputFile, inputFolder, outputFolder, options = { tags: [] }) => {
+export const parseMarkdown = async (
+  inputFile,
+  inputFolder,
+  outputFolder,
+  options = { tags: [] }
+) => {
   const relativePath = path.relative(inputFolder, inputFile);
-  const outputFileFolder = path.join(outputFolder, path.dirname(normalizePath(relativePath)));
+  const outputFileFolder = path.join(
+    outputFolder,
+    path.dirname(normalizePath(relativePath))
+  );
   const inputFileName = normalizePath(path.parse(inputFile).name);
   const outputFileName = `${inputFileName}.html`;
   const outputFilePath = path.join(outputFileFolder, outputFileName);
@@ -127,25 +135,26 @@ export const fileToHtml = async (inputFile, inputFolder, outputFolder, options =
     } catch (error) {
       await fs.mkdir(outputFileFolder, { recursive: true });
     }
+    console.log(chalk.greenBright(`Parsed: ${outputFilePath}`));
 
-    const templatePath = await findLayout(inputFile, inputFolder);
-    const pageAttributes = {
+    return {
       title,
-      ...frontMatter,
       content: htmlContent,
+      frontMatter,
+      inputFile,
+      outputFileFolder,
+      outputFileName,
+      outputFilePath,
     };
-
-    const htmlOutput = await renderHtml(templatePath, pageAttributes);
-    await fs.writeFile(outputFilePath, htmlOutput);
-
-    console.log(chalk.greenBright(`Rendered: ${outputFilePath}`));
   } catch (err) {
-    console.error(chalk.red(`Error processing file ${inputFile}:`), err);
+    console.error(chalk.red(`Error parsing file ${inputFile}:`), err);
   }
 };
 
-const renderHtml = async (templatePath, { title, content }) => {
-  const template = await fs.readFile(templatePath, 'utf8');
+export const renderHtmlPage = async (pageAttributes) => {
+  const { title, content, inputFile } = pageAttributes;
+  const templatePath = await findLayout(inputFile); //TODO fix this function arity mismatch.
+  const template = await fs.readFile(templatePath, "utf8");
   const rendered = mustache.render(template, { title, content });
   return rendered;
 };
