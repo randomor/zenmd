@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import { parseMarkdown, configParser } from "./renderer.js";
+import { parseMarkdown, configParser } from "./parser.js";
 
 const inputFolder = "./src/__test__";
 const outputFolder = "./dist";
@@ -41,6 +41,29 @@ describe("configParser", () => {
     assert.equal(title, "Hello World");
   });
 
+  it("renders relative link to .md with right path", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+    const file = await parser.process(
+      "Some markdown content with a relative link to [nested](nested.md)."
+    );
+    const { value } = file;
+    const renderedWithRightLink = value.includes('href="nested.html"');
+    assert(renderedWithRightLink);
+  });
+
+  it("renders relative link to image with right path", async () => {
+    const sourceFile = "./src/__test__/second level/nested.md";
+    const outputFileFolder = "./dist/second-level";
+    const parser = configParser(sourceFile, inputFolder, outputFileFolder);
+    const file = await parser.process("![Test Image](./assets/testImage.webp)");
+    const { value } = file;
+    const renderedWithRightImageLink = value.includes(
+      'src="./assets/testImage.webp"'
+    );
+    assert(renderedWithRightImageLink);
+  });
+
   it("renders iframe and html tags by default", async () => {
     const sourceFile = "./src/__test__/example.md";
     const parser = configParser(sourceFile, inputFolder, outputFolder);
@@ -77,5 +100,32 @@ describe("parseMarkdown", () => {
     assert(pageAttributes.outputFileFolder, "./dist");
     assert(pageAttributes.outputFileName, "example.html");
     assert(pageAttributes.outputFilePath, "dist/example.html");
+  });
+
+  describe("tags", () => {
+    it("skips file if not matching tags", async () => {
+      const sourceFile = "./src/__test__/example.md";
+      const pageAttributes = await parseMarkdown(
+        sourceFile,
+        inputFolder,
+        outputFolder,
+        {
+          tags: [["publish", "true"]],
+        }
+      );
+      // Assuming the parser is expected to return null or similar when skipping
+      assert.equal(pageAttributes, null);
+    });
+
+    it("renders file if matching tags", async () => {
+      const sourceFile = "./src/__test__/second level/nested.md";
+      const parser = configParser(sourceFile, inputFolder, outputFolder, {
+        tags: [["publish", "true"]],
+      });
+      const file = await parser.process(
+        "---\npublish: true\n---\n\n# Published Content"
+      );
+      assert.match(file.value, /Published Content/);
+    });
   });
 });

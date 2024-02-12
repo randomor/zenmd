@@ -38,9 +38,9 @@ export const configParser = (
     .use(remarkGfm)
     .use(() => (tree) => {
       visit(tree, "link", (node) => {
-        // all current domain path (path that begins with `.` or `/`) with extension .md will be replaced with .html
-        if (/^[./].*\.md$/.test(node.url)) {
-          node.url = normalizePath(node.url).replace(".md", ".html");
+        // all current domain path (path that begins with `.` or `/` or direct path e.g. example.md) with extension .md will be replaced with .html
+        if (!isUrl(node.url) && node.url.match(/\.md$/)) {
+          node.url = normalizePath(node.url).replace(/\.md$/, ".html");
         }
       });
     })
