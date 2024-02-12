@@ -60,7 +60,17 @@ export const configParser = (
           await fs.mkdir(path.dirname(outputPath), { recursive: true });
           const currentFileDir = path.dirname(currentFile);
           const imagePath = path.join(currentFileDir, decodedUrl);
-          await fs.copyFile(imagePath, outputPath);
+          
+          try {
+            await fs.copyFile(imagePath, outputPath);
+          } catch (error) {
+            console.error(
+              chalk.red(
+                `Error copying image from ${imagePath} to ${outputPath}: ${error.message}`
+              )
+            );
+          }
+          
           node.properties.src = `./${targetHref}`;
         }
       });

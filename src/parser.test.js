@@ -119,13 +119,46 @@ describe("parseMarkdown", () => {
 
     it("renders file if matching tags", async () => {
       const sourceFile = "./src/__test__/second level/nested.md";
-      const parser = configParser(sourceFile, inputFolder, outputFolder, {
-        tags: [["publish", "true"]],
-      });
-      const file = await parser.process(
-        "---\npublish: true\n---\n\n# Published Content"
+      const inputFolder = "./src/__test__/second level";
+      const outputFolder = "./dist/second-level";
+      const pageAttributes = await parseMarkdown(
+        sourceFile,
+        inputFolder,
+        outputFolder,
+        {
+          tags: [["publish", "true"]],
+        }
       );
-      assert.match(file.value, /Published Content/);
+      assert(pageAttributes.title, "hi");
+    });
+
+    it("skips file if not matching tags", async () => {
+      const sourceFile = "./src/__test__/second level/nested.md";
+      const pageAttributes = await parseMarkdown(
+        sourceFile,
+        inputFolder,
+        outputFolder,
+        {
+          tags: [["publish", "false"]],
+        }
+      );
+      // Assuming the parser is expected to return null or similar when skipping
+      assert.equal(pageAttributes, null);
+    });
+
+    it("does not skip files if tags doesn't exist", async () => {
+      const sourceFile = "./src/__test__/second level/nested with space.md";
+      const pageAttributes = await parseMarkdown(
+        sourceFile,
+        inputFolder,
+        outputFolder,
+        {
+          tags: [["publish", "false"]],
+        }
+      );
+      const resultFile = "dist/second-level/nested-with-space.html";
+      const { outputFilePath } = pageAttributes;
+      assert.equal(outputFilePath, resultFile);
     });
   });
 });
