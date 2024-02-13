@@ -61,7 +61,9 @@ const startProcessing = async () => {
   }
 
   const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(':'));
-  await processFolder(argv.input, argv.output, { tags: tagsKeyValue });
+  await processFolder(argv.input, argv.output, {
+    tags: tagsKeyValue,
+  });
 }
 
 const outputFolderExists = await fileExists(argv.output);
