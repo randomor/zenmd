@@ -21,9 +21,11 @@ export const processFolder = async (
     const files = await glob(inputGlob, globOptions);
 
     const pageAttributesList = await Promise.all(
-      files.map(async (file) => {
-        return parse(file, inputFolder, outputFolder, options);
-      })
+      files
+        .map(async (file) => {
+          return parse(file, inputFolder, outputFolder, options);
+        })
+        .filter((pageAttributes) => pageAttributes)
     );
 
     // render SiteMap
