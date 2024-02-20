@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com?plugins=typography,aspect-ratio,line-clamp"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=typography,aspect-ratio"></script>
   <title>{{title}}</title>
   <style>
     /* Add some anchor style so it shows up */
@@ -28,6 +28,20 @@
     main.prose > h1:first-child {
       margin-top: 1em;
     }
+
+    main.prose {
+      font-family: 'Merriweather', serif;
+    }
+
+    main.prose h1,
+    main.prose h2,
+    main.prose h3,
+    main.prose h4,
+    main.prose h5,
+    main.prose h6 {
+      font-family: sans-serif;
+    }
+
   </style>
 </head>
 <body class="bg-white dark:bg-gray-900">
@@ -36,7 +50,7 @@
   </main>
 
   <footer class="w-full text-center py-16">
-    <p class="text-gray-400 text-sm">Powered by ZenMD</p>
+    <p class="text-gray-400 text-sm">Powered by <a href="https://www.npmjs.com/package/zenmd">ZenMD</a></p>
   </footer>
 </body>
 </html>
