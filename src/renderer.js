@@ -6,6 +6,8 @@ import chalk from "chalk";
 export const renderHtmlPage = async (pageAttributes) => {
   const {
     title,
+    description,
+    frontMatter,
     content,
     inputFile,
     inputFolder,
@@ -14,7 +16,12 @@ export const renderHtmlPage = async (pageAttributes) => {
   } = pageAttributes;
   const templatePath = await findLayout(inputFile, inputFolder);
   const template = await fs.readFile(templatePath, "utf8");
-  const rendered = mustache.render(template, { title, content });
+  const rendered = mustache.render(template, {
+    ...frontMatter,
+    title,
+    description,
+    content,
+  });
 
   try {
     await fs.access(outputFileFolder);

@@ -134,6 +134,7 @@ export const parseMarkdown = async (
     const htmlContent = String(file.value);
 
     const title = file.data.meta.title || frontMatter.title || inputFileName;
+    const description = frontMatter.description || `A page about ${title}`;
 
     if (Object.keys(frontMatter).length > 0) {
       console.log(chalk.blueBright("Front Matter:"), frontMatter);
@@ -148,6 +149,7 @@ export const parseMarkdown = async (
 
     return {
       title,
+      description,
       content: htmlContent,
       frontMatter,
       inputFile,
