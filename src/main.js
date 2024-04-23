@@ -2,6 +2,8 @@ import path from 'path';
 import { glob } from 'glob';
 import { renderHtmlPage, renderSitemap } from "./renderer.js";
 import { parseMarkdown } from "./parser.js";
+import fs from "fs/promises";
+import { fileExists } from "./utils.js";
 
 // Load Markdown file and convert it to HTML
 export const processFolder = async (
@@ -34,6 +36,12 @@ export const processFolder = async (
         pageAttributesList,
         path.join(outputFolder, "sitemap.xml")
       );
+    }
+
+    // generate robots.txt that allows everything if none exists in output folder
+    const robotsOutputPath = path.join(outputFolder, "robots.txt");
+    if (!(await fileExists(robotsOutputPath))) {
+      await fs.writeFile(robotsOutputPath, "User-agent: *\nDisallow:");
     }
 
     for (const pageAttributes of pageAttributesList) {

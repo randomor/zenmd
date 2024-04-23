@@ -24,6 +24,7 @@ _The simplest way to transform a directory of .md files into a static site._
 - Filter docs with matching tags `--tags=publish:true` which will only render files with `publish` flag or `--tags=draft:false` which will not render files with `draft` flag.
 - Automatically infer title from first H1
 - Generates `sitemap.xml` at the output directory.
+- Automatically generates `robots.txt`
 
 ## Get Started
 
