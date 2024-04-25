@@ -36,7 +36,11 @@ export const renderHtmlPage = async (pageAttributes) => {
   return rendered;
 };
 
-export const renderSitemap = async (pageAttributesList, sitemapPath) => {
+export const renderSitemap = async (
+  pageAttributesList,
+  sitemapPath,
+  baseUrl
+) => {
   const sitemap = pageAttributesList
     .map((pageAttributes) => {
       const { outputFileFolder, outputFilePath } = pageAttributes;
@@ -47,7 +51,7 @@ export const renderSitemap = async (pageAttributesList, sitemapPath) => {
         .replace(/(\\|\/)/g, "/")
         .replace(/index.html$/, "")
         .replace(/\.html$/, "");
-      return `<url><loc>${pageUrl}</loc></url>`;
+      return `<url><loc>${baseUrl + pageUrl}</loc></url>`;
     })
     .join("\n");
 

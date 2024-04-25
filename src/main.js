@@ -9,10 +9,11 @@ import { fileExists } from "./utils.js";
 export const processFolder = async (
   inputArg,
   outputFolder,
-  options = { parser: parseMarkdown, tags, sitemap: true }
+  options = { parser: parseMarkdown, tags, sitemap: true, baseUrl }
 ) => {
   const parse = options.parser || parseMarkdown;
   const sitemap = options.sitemap || true;
+  const baseUrl = options.baseUrl;
   try {
     const globOptions = {
       cwd: process.cwd(),
@@ -31,10 +32,11 @@ export const processFolder = async (
     );
 
     // render SiteMap
-    if (sitemap) {
+    if (sitemap && baseUrl) {
       await renderSitemap(
         pageAttributesList,
-        path.join(outputFolder, "sitemap.xml")
+        path.join(outputFolder, "sitemap.xml"),
+        baseUrl
       );
     }
 

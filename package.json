@@ -8,7 +8,7 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.0.12",
+  "version": "0.0.13",
   "bin": {
     "zenmd": "./index.js"
   },

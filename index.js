@@ -21,35 +21,42 @@ const folderEmpty = async (p) => {
 };
 
 const argv = yargs(hideBin(process.argv))
-  .command('$0 [input]', 'default command', (yargs) => {
-    yargs.positional('input', {
-      describe: 'Input folder path or file path',
-      default: './docs',
-    })
+  .command("$0 [input]", "default command", (yargs) => {
+    yargs.positional("input", {
+      describe: "Input folder path or file path",
+      default: "./docs",
+    });
   })
-  .option('output', {
-    alias: 'o',
-    type: 'string',
-    describe: 'Output folder path',
-    default: './dist',
+  .option("output", {
+    alias: "o",
+    type: "string",
+    describe: "Output folder path",
+    default: "./dist",
   })
-  .option('tags', {
-    alias: 't',
-    type: 'array',
-    describe: 'Tags for the operation',
+  .option("tags", {
+    alias: "t",
+    type: "array",
+    describe: "Tags for the operation",
   })
-  .option('force', {
-    alias: 'f',
-    type: 'boolean',
-    describe: 'Force reset of output folder',
+  .option("force", {
+    alias: "f",
+    type: "boolean",
+    describe: "Force reset of output folder",
   })
-  .argv;
+  .option("baseUrl", {
+    alias: "base",
+    type: "string",
+    describe: "Base URL for sitemap",
+  }).argv;
 
-console.log(chalk.blue('Input: '), chalk.green(argv.input));
+console.log(chalk.blue("Input: "), chalk.green(argv.input));
 if (argv.tags) {
-  console.log(chalk.blue('Filtering match files by tags: '), chalk.green(argv.tags));
+  console.log(
+    chalk.blue("Filtering match files by tags: "),
+    chalk.green(argv.tags)
+  );
 }
-console.log(chalk.blue('Output folder: '), chalk.green(argv.output));
+console.log(chalk.blue("Output folder: "), chalk.green(argv.output));
 
 const startProcessing = async () => {
   // create output folder if doesn't exist, other wise erase output folder
@@ -60,11 +67,13 @@ const startProcessing = async () => {
     await fs.rm(argv.output, { recursive: true });
   }
 
-  const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(':'));
+  const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(":"));
   await processFolder(argv.input, argv.output, {
     tags: tagsKeyValue,
+    // Default to option but take env variable if not provided, for sitemap generation
+    baseUrl: argv.baseUrl || process.env.BASE_URL,
   });
-}
+};
 
 const outputFolderExists = await fileExists(argv.output);
 
