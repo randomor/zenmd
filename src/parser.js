@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import remarkWikiLink from "remark-wiki-link";
 import remarkFrontmatter from "remark-frontmatter";
-// import remarkParseFrontmatter from "remark-parse-frontmatter";
+import remarkParseFrontmatter from "remark-parse-frontmatter";
 import rehypeSlug from "rehype-slug";
 import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
@@ -30,6 +30,7 @@ export const configParser = (
   const processor = unified()
     .use(remarkParse)
     .use(remarkFrontmatter)
+    .use(remarkParseFrontmatter)
     .use(remarkWikiLink, {
       pageResolver: (name) => [
         path.join(relativePathToInputFolder, normalizePath(name)),
