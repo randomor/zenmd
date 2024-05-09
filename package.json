@@ -8,7 +8,7 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.0.13",
+  "version": "0.0.14",
   "bin": {
     "zenmd": "./index.js"
   },
@@ -33,9 +33,11 @@
     "remark": "^15.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
     "remark-parse-frontmatter": "^1.0.3",
     "remark-rehype": "^11.0.0",
     "remark-wiki-link": "^2.0.1",
+    "unified": "^11.0.4",
     "unist-util-visit": "^5.0.0",
     "yargs": "^17.7.2"
   },

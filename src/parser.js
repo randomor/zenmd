@@ -1,10 +1,10 @@
 import fs from "fs/promises";
-import { remark } from "remark";
+import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import remarkWikiLink from "remark-wiki-link";
 import remarkFrontmatter from "remark-frontmatter";
-import remarkParseFrontmatter from "remark-parse-frontmatter";
+// import remarkParseFrontmatter from "remark-parse-frontmatter";
 import rehypeSlug from "rehype-slug";
 import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
@@ -12,6 +12,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeInferTitleMeta from "rehype-infer-title-meta";
 import path from "path";
 import chalk from "chalk";
+import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { normalizePath, isUrl } from "./utils.js";
 
@@ -26,9 +27,9 @@ export const configParser = (
     inputFolder
   );
 
-  const processor = remark()
-    .use(remarkFrontmatter, ["yaml"])
-    .use(remarkParseFrontmatter)
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkFrontmatter)
     .use(remarkWikiLink, {
       pageResolver: (name) => [
         path.join(relativePathToInputFolder, normalizePath(name)),
@@ -60,7 +61,7 @@ export const configParser = (
           await fs.mkdir(path.dirname(outputPath), { recursive: true });
           const currentFileDir = path.dirname(currentFile);
           const imagePath = path.join(currentFileDir, decodedUrl);
-          
+
           try {
             await fs.copyFile(imagePath, outputPath);
           } catch (error) {
@@ -70,7 +71,7 @@ export const configParser = (
               )
             );
           }
-          
+
           node.properties.src = `./${targetHref}`;
         }
       });
@@ -133,7 +134,7 @@ export const parseMarkdown = async (
 
     const htmlContent = String(file.value);
 
-    const title = file.data.meta.title || frontMatter.title || inputFileName;
+    const title = file.data.meta?.title || frontMatter.title || inputFileName;
     const description = frontMatter.description || `A page about ${title}`;
 
     if (Object.keys(frontMatter).length > 0) {
