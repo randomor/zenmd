@@ -6,11 +6,17 @@ _Beta software: expect bugs and breaking changes..._
 
 _The simplest way to transform a directory of .md files into a static site._
 
+## Demo
+
+- https://idealistspace.com/zenmd - here is a post (about why ZenMD was built) on a site that's built with ZenMD. It's meta... :)
+- https://thezenjournal.com - a Remix custom homepage with a ZenMD compiled `posts/` directory
+
 ## Use Cases
 
 - Bring your own editor and host. Obsidian, Bear, Typora, VS Code... Netlify, Vercel, Cloudflare...
 - Publish your [Obsidian](https://obsidian.md/) digital garden.
 - Back to the future: edit .html layouts without compiling.
+- Bring your own framework, and let ZenMD render your `.md` files.
 
 ## Principles
 
@@ -24,8 +30,9 @@ _The simplest way to transform a directory of .md files into a static site._
   - Support images in markdown files.
   - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
+  - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
-- Filter docs with matching tags `--tags=publish:true` which will only render files with `publish` flag or `--tags=draft:false` which will not render files with `draft` flag.
+- Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
 - Generates `sitemap.xml` at the output directory.
   - Requires `baseUrl` option or `BASE_URL` env var, since `sitemap.xml` requires full URL.
@@ -56,7 +63,7 @@ zenmd ...
 
 - Built with [remark](https://github.com/remarkjs/remark)
 - Default theme used [TailwindCSS Typography](https://tailwindcss.com/docs/typography-plugin)
-- Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli)
+- Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli), [MkDocs](https://www.mkdocs.org/)
 
 ## Who made this?
 
