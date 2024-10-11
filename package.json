@@ -8,7 +8,11 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.0.14",
+  "version": "0.0.15",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/randomor/zenmd.git"
+  },
   "bin": {
     "zenmd": "./index.js"
   },
