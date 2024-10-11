@@ -2,6 +2,8 @@
 
 _Beta software: expect bugs and breaking changes..._
 
+Package released on npm: https://www.npmjs.com/package/zenmd
+
 ## Tagline
 
 _The simplest way to transform a directory of .md files into a static site._
@@ -10,6 +12,22 @@ _The simplest way to transform a directory of .md files into a static site._
 
 - https://idealistspace.com/zenmd - here is a post (about why ZenMD was built) on a site that's built with ZenMD. It's meta... :)
 - https://thezenjournal.com - a Remix custom homepage with a ZenMD compiled `posts/` directory
+
+## Get Started
+
+Just one command to build and another to deploy:
+
+1. Generate site
+
+```bash
+npx zenmd <inputFolder> --output <outputFolder or default: ./dist>
+# Or if you prefer to install to a global command:
+npm install zenmd -g
+zenmd ...
+```
+
+2. Drag and drop the generated folder into Netlify
+3. Or `netlify deploy`
 
 ## Use Cases
 
@@ -39,25 +57,20 @@ _The simplest way to transform a directory of .md files into a static site._
   - If missing base url, no sitemap will be generated.
 - Automatically generates `robots.txt`
 
-## Get Started
+## Gaps
 
-Getting started with `zenmd` is as easy as one, two!
+Here is a list of known gaps:
 
-1. Generate site
+- This may only support a subset of your favorite markdown syntax. For example, if you work with Obsidian, your image reference will work with `![](image.jpeg)`, with ZenMD it needs to be more specific `![](./assets/image.jpeg)`
+- The generated site doesn't have a RSS feed.
 
-```bash
-npx zenmd <inputFolder> --output <outputFolder or default: ./dist>
-# Or if you prefer to install to a global command:
-npm install zenmd -g
-zenmd ...
-```
+Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
 
-2. Drag and drop the generated folder into Netlify
-3. Or `netlify deploy`
+## How is this different from...?
 
-## Development Notes
-
-- Publish: `npm publish --access public`
+- Hugo/jekyll and traditional SSG: no need to download a framework or generate a framework specific repo, your content (and npx) is all you need.
+- Blog starter kits: less customization, simpler setup, no git repo with a dozen configs mixed with your content. No React components.
+- Notion/Obsidian Publish: these are simpler solutions (no git/CLI) from bigger org and more integrated to your workflow if you use these tools heavily. ZenMD is a balance between independence and simplicity.
 
 ## References
 
@@ -68,6 +81,10 @@ zenmd ...
 ## Who made this?
 
 Made by [randomor](https://x.com/randomor), who also made [ZenJournal](https://thezenjournal.com)
+
+## Development Notes
+
+- Publish: `npm publish --access public`
 
 ## License
 
