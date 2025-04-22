@@ -1,7 +1,8 @@
-import fs from 'fs/promises';
+import fs from "fs/promises";
 import { findLayout } from "./utils.js";
 import mustache from "mustache";
 import chalk from "chalk";
+import path from "path";
 
 export const renderHtmlPage = async (pageAttributes) => {
   const {
@@ -41,17 +42,19 @@ export const renderSitemap = async (
   sitemapPath,
   baseUrl
 ) => {
+  const outputFolder = path.dirname(sitemapPath);
   const sitemap = pageAttributesList
-    .map((pageAttributes) => {
-      const { outputFileFolder, outputFilePath } = pageAttributes;
-      // pageUrl is the relative path to the output fileFolder
-      // also remove .html and index.html from the url and normalize the path
-      const pageUrl = outputFilePath
-        .replace(outputFileFolder, "")
-        .replace(/(\\|\/)/g, "/")
-        .replace(/index.html$/, "")
-        .replace(/\.html$/, "");
-      return `<url><loc>${baseUrl + pageUrl}</loc></url>`;
+    .map(({ outputFilePath }) => {
+      // compute path relative to sitemap folder
+      let relPath = path.relative(outputFolder, outputFilePath);
+      // normalize to forward slashes
+      relPath = relPath.replace(/\\/g, "/");
+      // remove index.html and .html
+      relPath = relPath.replace(/index\.html$/, "");
+      relPath = relPath.replace(/\.html$/, "");
+      // ensure leading slash
+      const pageUrl = relPath.startsWith("/") ? relPath : `/${relPath}`;
+      return `<url><loc>${baseUrl}${pageUrl}</loc></url>`;
     })
     .join("\n");
 

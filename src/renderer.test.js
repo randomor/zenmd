@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
-import assert from 'node:assert';
-import { describe, it, beforeEach } from 'node:test';
-import { renderHtmlPage } from "./renderer.js";
+import fs from "fs/promises";
+import assert from "node:assert";
+import { describe, it, beforeEach } from "node:test";
+import { renderHtmlPage, renderSitemap } from "./renderer.js";
 
 const inputFolder = "./src/__test__";
 const outputFolder = "./dist";
@@ -54,5 +54,44 @@ describe("renderHtmlPage", () => {
       .catch(() => false);
 
     assert(fileExists);
+  });
+});
+
+describe("renderSitemap", () => {
+  const sitemapPath = "./dist/sitemap.xml";
+  const baseUrl = "https://example.com";
+  const pageAttributesList = [
+    {
+      outputFileFolder: "./dist",
+      outputFilePath: "dist/example.html",
+    },
+    {
+      outputFileFolder: "./dist/second-level",
+      outputFilePath: "dist/second-level/nested.html",
+    },
+    {
+      outputFileFolder: "./dist/second-level",
+      outputFilePath: "dist/second-level/index.html",
+    },
+  ];
+
+  beforeEach(async () => {
+    await fs.rm("./dist", { recursive: true, force: true });
+    await fs.mkdir("./dist/second-level", { recursive: true });
+  });
+
+  it("creates a sitemap.xml with correct URLs", async () => {
+    await renderSitemap(pageAttributesList, sitemapPath, baseUrl);
+    const sitemapContent = await fs.readFile(sitemapPath, "utf-8");
+    assert(sitemapContent.includes("<loc>https://example.com/example</loc>"));
+    assert(
+      sitemapContent.includes(
+        "<loc>https://example.com/second-level/nested</loc>"
+      )
+    );
+    assert(
+      sitemapContent.includes("<loc>https://example.com/second-level/</loc>")
+    );
+    assert(sitemapContent.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
   });
 });
