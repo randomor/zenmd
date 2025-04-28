@@ -75,7 +75,7 @@ Feel free to create an issue or submit a PR on Github if you notice more deal br
 ## References
 
 - Built with [remark](https://github.com/remarkjs/remark)
-- Default theme used [TailwindCSS Typography](https://tailwindcss.com/docs/typography-plugin)
+- Default theme used [SimpleCss](https://simplecss.org/)
 - Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli), [MkDocs](https://www.mkdocs.org/)
 
 ## Who made this?
