@@ -1,58 +1,39 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{{description}}">
-  <script src="https://cdn.tailwindcss.com?plugins=typography,aspect-ratio"></script>
+  <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+  <!-- Serif body font and sans headings -->
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
-  <title>{{title}}</title>
   <style>
-    /* Add some anchor style so it shows up */
-    .icon.icon-link {
-      width: 0.2em;
-      height: 0.2em;
-      background-color: #333;  /* Adjust color as needed */
-      border-radius: 50%;  /* This makes the icon round */
-      display: inline-block;
-      margin-left: 0.2em;  /* Adjust margin as needed */
-      vertical-align: middle;  /* This aligns the icon with the text */
-    }
-    /* But we don't want it to show up on H1, which is a bit too much */
-    h1 .icon.icon-link {
-      width: auto;
-      height: auto;
-      background-color: transparent;
-      border-radius: 0;
-      margin-left: 0;
-    }
-
-    main.prose > h1:first-child {
-      margin-top: 1em;
-    }
-
-    main.prose {
+    body {
       font-family: 'Merriweather', serif;
+      line-height: 1.8;
     }
 
-    main.prose h1,
-    main.prose h2,
-    main.prose h3,
-    main.prose h4,
-    main.prose h5,
-    main.prose h6 {
-      font-family: sans-serif;
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-
   </style>
+  <title>{{title}}</title>
 </head>
-<body class="bg-white dark:bg-gray-900">
-  <main class="prose lg:prose-xl dark:prose-invert max-w-screen-lg m-auto p-4">
+
+<body>
+  <main class="article">
     {{{content}}}
   </main>
 
-  <footer class="w-full text-center py-16">
-    <p class="text-gray-400 text-sm">Powered by <a href="https://www.npmjs.com/package/zenmd">ZenMD</a></p>
+  <footer>
+    <p>Powered by <a href="https://www.npmjs.com/package/zenmd">ZenMD</a></p>
   </footer>
 </body>
+
 </html>
