@@ -8,7 +8,7 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.0.17",
+  "version": "0.0.18",
   "repository": {
     "type": "git",
     "url": "https://github.com/randomor/zenmd.git"
