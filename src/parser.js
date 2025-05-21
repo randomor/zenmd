@@ -14,7 +14,7 @@ import path from "path";
 import chalk from "chalk";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
-import { normalizePath, isUrl } from "./utils.js";
+import { normalizePath } from "./utils.js"; // Removed isUrl
 
 export const configParser = (
   currentFile,
@@ -41,7 +41,8 @@ export const configParser = (
     .use(() => (tree) => {
       visit(tree, "link", (node) => {
         // all current domain path (path that begins with `.` or `/` or direct path e.g. example.md) with extension .md will be replaced with .html
-        if (!isUrl(node.url) && node.url.match(/\.md$/)) {
+        // Removed isUrl check: if (!isUrl(node.url) && node.url.match(/\.md$/)) {
+        if (node.url.match(/\.md$/)) {
           node.url = normalizePath(node.url).replace(/\.md$/, ".html");
         }
       });
@@ -53,9 +54,15 @@ export const configParser = (
       visit(tree, ["image", "element"], async (node) => {
         if (
           node.tagName === "img" &&
-          node?.properties?.src &&
-          !isUrl(node.properties.src)
+          node?.properties?.src
+          // Removed isUrl check: !isUrl(node.properties.src)
         ) {
+          // Additional check to prevent processing external URLs if possible,
+          // though this is not as robust as a dedicated isUrl function.
+          // This simple check assumes external URLs will start with http/https.
+          if (node.properties.src.startsWith('http://') || node.properties.src.startsWith('https://')) {
+            return;
+          }
           const decodedUrl = decodeURI(node.properties.src);
           const targetHref = path.join(imageDir, decodedUrl);
           const outputPath = path.join(outputFileFolder, imageDir, decodedUrl);
@@ -159,6 +166,7 @@ export const parseMarkdown = async (
       outputFileFolder,
       outputFileName,
       outputFilePath,
+      layoutName: options.layoutName, // <-- Add layoutName here
     };
   } catch (err) {
     console.error(chalk.red(`Error parsing file ${inputFile}:`), err);

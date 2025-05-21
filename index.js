@@ -47,6 +47,11 @@ const argv = yargs(hideBin(process.argv))
     alias: "base",
     type: "string",
     describe: "Base URL for sitemap",
+  })
+  .option("layout", { // <-- New layout option
+    alias: "l",
+    type: "string",
+    describe: "Layout style (e.g., matrix)",
   }).argv;
 
 console.log(chalk.blue("Input: "), chalk.green(argv.input));
@@ -55,6 +60,9 @@ if (argv.tags) {
     chalk.blue("Filtering match files by tags: "),
     chalk.green(argv.tags)
   );
+}
+if (argv.layout) { // <-- Log layout if provided
+  console.log(chalk.blue("Layout: "), chalk.green(argv.layout));
 }
 console.log(chalk.blue("Output folder: "), chalk.green(argv.output));
 
@@ -70,8 +78,8 @@ const startProcessing = async () => {
   const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(":"));
   await processFolder(argv.input, argv.output, {
     tags: tagsKeyValue,
-    // Default to option but take env variable if not provided, for sitemap generation
     baseUrl: argv.baseUrl || process.env.BASE_URL,
+    layout: argv.layout, // <-- Pass layout to processFolder
   });
 };
 

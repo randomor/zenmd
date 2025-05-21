@@ -14,8 +14,10 @@ export const renderHtmlPage = async (pageAttributes) => {
     inputFolder,
     outputFileFolder,
     outputFilePath,
+    layoutName, // layoutName is expected to be part of pageAttributes
   } = pageAttributes;
-  const templatePath = await findLayout(inputFile, inputFolder);
+  
+  const templatePath = await findLayout(inputFile, inputFolder, layoutName); // Pass layoutName here
   const template = await fs.readFile(templatePath, "utf8");
   const rendered = mustache.render(template, {
     ...frontMatter,

@@ -10,6 +10,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
   const parse = options.parser || parseMarkdown;
   const sitemap = options.sitemap !== undefined ? options.sitemap : true;
   const baseUrl = options.baseUrl;
+  const layoutName = options.layout; // <-- Extract layoutName from options
   const renderSitemapFn = options.renderSitemap || renderSitemap;
   const renderHtmlPageFn = options.renderHtmlPage || renderHtmlPage;
   try {
@@ -26,7 +27,8 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const pageAttributesList = await Promise.all(
       files
         .map(async (file) => {
-          return parse(file, inputFolder, outputFolder, options);
+          // Pass layoutName to the parse function
+          return parse(file, inputFolder, outputFolder, { ...options, layoutName }); 
         })
         .filter((pageAttributes) => pageAttributes)
     );
@@ -44,14 +46,16 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const robotsOutputPath = path.join(outputFolder, "robots.txt");
     if (!(await fileExists(robotsOutputPath))) {
       try {
-        await fs.writeFile(robotsOutputPath, "User-agent: *\nDisallow:");
+        await fs.writeFile(robotsOutputPath, `User-agent: *
+Disallow:`);
       } catch (err) {
         console.error("Error writing robots.txt:", err);
       }
     }
 
     for (const pageAttributes of pageAttributesList) {
-      await renderHtmlPageFn(pageAttributes);
+      // pageAttributes should now include layoutName from the parser
+      await renderHtmlPageFn(pageAttributes); 
     }
   } catch (err) {
     console.error("Error converting Markdown to HTML:", err);

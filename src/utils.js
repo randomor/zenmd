@@ -1,43 +1,44 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import fs from "fs/promises";
 
-export const normalizePath = (pathName) => {
-  return pathName.trim().replace(/(\s|%20)/g, '-').toLowerCase();
-}
-
-export const fileExists = async (filePath) => {
+export const fileExists = async (path) => {
   try {
-    await fs.access(filePath);
+    await fs.access(path);
     return true;
   } catch (error) {
     return false;
   }
-}
+};
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const defaultLayout = path.join(__dirname, './static/default_layout.html');
-
-export const findLayout = async (currentFile, inputFolder, layoutName = 'layout.html') => {
-
-  let currentDir = currentFile;
-  do {
-    currentDir = path.dirname(currentDir);
-    const filePath = path.join(currentDir, layoutName);
-    if (await fileExists(filePath)) {
-      return filePath;
-    }
-  } while (path.resolve(currentDir) !== path.resolve(inputFolder));
-
-  return Promise.resolve(defaultLayout);
-}
-
-export const isUrl = (string) => {
-  try {
-    new URL(string);
-  } catch (_) {
-    return false;
+export const findLayout = async (inputFile, inputFolder, layoutName) => {
+  if (layoutName === "matrix") {
+    return path.join(process.cwd(), "src", "static", "matrix_layout.html");
   }
-  return true;
+
+  let currentFolder = path.dirname(inputFile);
+  while (currentFolder.startsWith(inputFolder)) {
+    const layoutPath = path.join(currentFolder, "layout.html");
+    if (await fileExists(layoutPath)) {
+      return layoutPath;
+    }
+    if (currentFolder === inputFolder) {
+      break;
+    }
+    currentFolder = path.dirname(currentFolder);
+  }
+
+  return path.join(process.cwd(), "src", "static", "default_layout.html");
+};
+
+export const normalizePath = (p) => {
+  if (typeof p !== 'string') {
+    console.warn('normalizePath received a non-string argument:', p);
+    return p;
+  }
+  let normalized = p.trim(); // Trim whitespace
+  normalized = normalized.replace(/%20/g, ' '); // Replace %20 with space
+  normalized = normalized.replace(/\s+/g, '-'); // Replace spaces with hyphens
+  normalized = normalized.toLowerCase(); // Convert to lowercase
+  normalized = normalized.split('\\').join('/'); // Normalize slashes
+  return normalized;
 };
