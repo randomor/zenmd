@@ -21,9 +21,6 @@ Just one command to build and another to deploy:
 
 ```bash
 npx zenmd <inputFolder> --output <outputFolder or default: ./dist>
-# Use --layout to choose a built-in theme (default, matrix or cyberpunk):
-zenmd <inputFolder> --layout matrix
-zenmd <inputFolder> --layout cyberpunk
 # Or if you prefer to install to a global command:
 npm install zenmd -g
 zenmd ...
