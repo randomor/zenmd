@@ -21,6 +21,8 @@ Just one command to build and another to deploy:
 
 ```bash
 npx zenmd <inputFolder> --output <outputFolder or default: ./dist>
+# Use --layout to choose a built-in theme (default or matrix):
+zenmd <inputFolder> --layout matrix
 # Or if you prefer to install to a global command:
 npm install zenmd -g
 zenmd ...
@@ -50,6 +52,7 @@ zenmd ...
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
   - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
+- Layout option via `--layout` to select a built-in theme (currently `default` or `matrix`) when no custom layout.html is provided.
 - Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
 - Generates `sitemap.xml` at the output directory.

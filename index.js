@@ -47,7 +47,15 @@ const argv = yargs(hideBin(process.argv))
     alias: "base",
     type: "string",
     describe: "Base URL for sitemap",
-  }).argv;
+  })
+  .option("layout", {
+    alias: "l",
+    type: "string",
+    describe: "Layout style when no custom layout is provided (default or matrix)",
+    choices: ["default", "matrix"],
+    default: "default",
+  })
+  .argv;
 
 console.log(chalk.blue("Input: "), chalk.green(argv.input));
 if (argv.tags) {
@@ -72,6 +80,7 @@ const startProcessing = async () => {
     tags: tagsKeyValue,
     // Default to option but take env variable if not provided, for sitemap generation
     baseUrl: argv.baseUrl || process.env.BASE_URL,
+    layout: argv.layout,
   });
 };
 

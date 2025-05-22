@@ -4,7 +4,7 @@ import mustache from "mustache";
 import chalk from "chalk";
 import path from "path";
 
-export const renderHtmlPage = async (pageAttributes) => {
+export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') => {
   const {
     title,
     description,
@@ -15,7 +15,7 @@ export const renderHtmlPage = async (pageAttributes) => {
     outputFileFolder,
     outputFilePath,
   } = pageAttributes;
-  const templatePath = await findLayout(inputFile, inputFolder);
+  const templatePath = await findLayout(inputFile, inputFolder, layoutOption);
   const template = await fs.readFile(templatePath, "utf8");
   const rendered = mustache.render(template, {
     ...frontMatter,

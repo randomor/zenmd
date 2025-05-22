@@ -51,7 +51,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     }
 
     for (const pageAttributes of pageAttributesList) {
-      await renderHtmlPageFn(pageAttributes);
+      await renderHtmlPageFn(pageAttributes, options.layout);
     }
   } catch (err) {
     console.error("Error converting Markdown to HTML:", err);
