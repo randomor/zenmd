@@ -77,6 +77,8 @@ Feel free to create an issue or submit a PR on Github if you notice more deal br
 
 - Built with [remark](https://github.com/remarkjs/remark)
 - Default theme used [SimpleCss](https://simplecss.org/)
+- Cyberpunk theme used [Cyberpunk Color Palette
+  by mishiki](https://www.color-hex.com/color-palette/14887)
 - Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli), [MkDocs](https://www.mkdocs.org/)
 
 ## Who made this?
