@@ -51,8 +51,8 @@ const argv = yargs(hideBin(process.argv))
   .option("layout", {
     alias: "l",
     type: "string",
-    describe: "Layout style when no custom layout is provided (default or matrix)",
-    choices: ["default", "matrix"],
+    describe: "Layout style when no custom layout is provided (default, matrix or cyberpunk)",
+    choices: ["default", "matrix", "cyberpunk"],
     default: "default",
   })
   .argv;
