@@ -14,6 +14,7 @@ import path from "path";
 import chalk from "chalk";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+// Sync fs functions removed as findImageRecursiveSync is being removed
 import { normalizePath, isUrl } from "./utils.js";
 
 export const configParser = (
@@ -104,8 +105,9 @@ export const configParser = (
                 // Optionally rethrow or handle error
               })
           );
-          // Update the src to be relative to the HTML file's location
-          node.properties.src = `./${targetHref}`;
+          // Update the src to be relative to the HTML file's location, with URL encoding for path segments
+          const encodedTargetHref = targetHref.split('/').map(encodeURIComponent).join('/');
+          node.properties.src = `./${encodedTargetHref}`;
         }
       });
       if (promises.length > 0) {
@@ -142,15 +144,19 @@ export const parseMarkdown = async (
     let data = await fs.readFile(inputFile, "utf8"); // Use let as data will be modified
 
     // Pre-processing step for Obsidian image embeds
-    // Replace ![[filename.ext]] with ![](./filename.ext)
-    // Replace ![[folder/filename.ext]] with ![](./folder/filename.ext)
     data = data.replace(/\!\[\[(.*?)\]\]/g, (match, capturedPath) => {
-      // Encode each part of the path separately to preserve slashes
-      const encodedPath = capturedPath
+      // capturedPath is the raw string between ![[ and ]]
+      // e.g., "image.png", "folder/image.png", "image with space.png"
+      const decodedUserPath = decodeURIComponent(capturedPath); // Still good to decode if user manually %20 encodes in link
+
+      // No filesystem checks or recursive search; just use the path as provided by the user.
+      const effectivePath = decodedUserPath;
+
+      const finalEncodedPath = effectivePath
         .split("/")
-        .map(encodeURIComponent)
+        .map(encodeURIComponent) // Encode each path segment
         .join("/");
-      return `![](./${encodedPath})`;
+      return `![](./${finalEncodedPath})`;
     });
 
     const processor = await configParser(
@@ -213,3 +219,4 @@ export const parseMarkdown = async (
     console.error(chalk.red(`Error parsing file ${inputFile}:`), err);
   }
 };
+// Removed findImageRecursiveSync function
