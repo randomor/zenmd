@@ -15,7 +15,7 @@ import chalk from "chalk";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 // Sync fs functions removed as findImageRecursiveSync is being removed
-import { normalizePath, isUrl } from "./utils.js";
+import { normalizePath, isUrl, findImageRecursive } from "./utils.js";
 
 export const configParser = (
   currentFile,
@@ -143,21 +143,54 @@ export const parseMarkdown = async (
   try {
     let data = await fs.readFile(inputFile, "utf8"); // Use let as data will be modified
 
-    // Pre-processing step for Obsidian image embeds
-    data = data.replace(/\!\[\[(.*?)\]\]/g, (match, capturedPath) => {
-      // capturedPath is the raw string between ![[ and ]]
-      // e.g., "image.png", "folder/image.png", "image with space.png"
-      const decodedUserPath = decodeURIComponent(capturedPath); // Still good to decode if user manually %20 encodes in link
+    // Pre-processing step for Obsidian image embeds ![[...]]
+    const imageEmbedRegex = /\!\[\[(.*?)\]\]/g;
+    const matches = [];
+    let regexMatch;
+    while ((regexMatch = imageEmbedRegex.exec(data)) !== null) {
+      matches.push({
+        fullMatch: regexMatch[0], // e.g., ![[image.png]]
+        capturedPath: regexMatch[1], // e.g., image.png
+        index: regexMatch.index,
+      });
+    }
 
-      // No filesystem checks or recursive search; just use the path as provided by the user.
-      const effectivePath = decodedUserPath;
+    const currentFileDir = path.dirname(inputFile);
+    const replacementValues = [];
+
+    for (const item of matches) {
+      const decodedUserPath = decodeURIComponent(item.capturedPath);
+      let effectivePath = decodedUserPath; // Default to original path
+
+      const foundImagePath = await findImageRecursive(decodedUserPath, currentFileDir);
+
+      if (foundImagePath) {
+        // foundImagePath is already relative to currentFileDir
+        effectivePath = foundImagePath;
+      } else {
+        console.warn(
+          chalk.yellow(
+            `[Warning] Image "${decodedUserPath}" not found in directory or subdirectories of "${inputFile}". Using original path link.`
+          )
+        );
+      }
 
       const finalEncodedPath = effectivePath
         .split("/")
         .map(encodeURIComponent) // Encode each path segment
         .join("/");
-      return `![](./${finalEncodedPath})`;
-    });
+      replacementValues.push({
+        fullMatch: item.fullMatch,
+        replacementString: `![](./${finalEncodedPath})`,
+      });
+    }
+
+    // Perform replacements. Iterating backwards is safer if there were index-based replacements.
+    // For string-based replacement, order doesn't strictly matter unless replacements create new matches.
+    // Here, each `fullMatch` is distinct for ![[...]] embeds due to the captured path.
+    for (const r of replacementValues) {
+      data = data.replace(r.fullMatch, r.replacementString);
+    }
 
     const processor = await configParser(
       inputFile,
