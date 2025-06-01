@@ -192,7 +192,28 @@ describe("Obsidian Image Path Resolution via parseMarkdown", () => {
   const testMdFile = path.join(testBaseDir, "test.md");
   const tempOutputBaseForSuite = path.join("dist", "__test_output_parser_image_resolution"); // Unique output for this suite
 
-  // after hook for cleanup for the entire test file.
+  beforeEach(async () => {
+    // Ensure a clean slate for each test in this suite by recreating fixtures
+    const subfolderDir = path.join(testBaseDir, "subfolder");
+    // Clean up testBaseDir first to ensure it's fresh, then recreate
+    await fsPromises.rm(testBaseDir, { recursive: true, force: true }).catch(() => {}); // Ignore error if it doesn't exist
+    await fsPromises.mkdir(subfolderDir, { recursive: true });
+
+    const mdContent = `![[image1.png]]
+![[image2.png]]
+![[image_not_found.png]]
+![[image with spaces.png]]
+![[subfolder/image2.png]]`;
+    await fsPromises.writeFile(testMdFile, mdContent);
+
+    // Create empty image files
+    await fsPromises.writeFile(path.join(testBaseDir, "image1.png"), "");
+    await fsPromises.writeFile(path.join(testBaseDir, "image with spaces.png"), "");
+    await fsPromises.writeFile(path.join(subfolderDir, "image2.png"), "");
+  });
+
+  // test.after hook for cleanup for the entire test file.
+  // This will clean up testBaseDir after all tests in THIS FILE are done.
   // Note: `test.after()` is the correct way to register a cleanup for the whole file in node:test
   // This will run after all tests in this file are done.
   // If we need suite-specific cleanup, it's more complex or needs manual triggering.
