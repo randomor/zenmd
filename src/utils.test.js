@@ -78,8 +78,28 @@ describe("findLayout", () => {
   it("returns default if can't find default", async () => {
     const inputFile = "./readme.md";
     const inputFolder = "./";
-    const layout = await findLayout(inputFile, inputFolder);
-    assert.match(layout, /default_layout\.html/);
+
+    // Save and temporarily remove any existing layout.html to test fallback behavior
+    const layoutPath = "./layout.html";
+    let layoutBackup = null;
+
+    try {
+      // Check if layout.html exists and back it up
+      const layoutExists = await fileExists(layoutPath);
+      if (layoutExists) {
+        layoutBackup = await fs.readFile(layoutPath, "utf8");
+        await fs.rm(layoutPath);
+      }
+
+      // Now test the fallback behavior
+      const layout = await findLayout(inputFile, inputFolder);
+      assert.match(layout, /default_layout\.html/);
+    } finally {
+      // Restore layout.html if it existed
+      if (layoutBackup !== null) {
+        await fs.writeFile(layoutPath, layoutBackup);
+      }
+    }
   });
 });
 
