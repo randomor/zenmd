@@ -46,11 +46,11 @@ describe("configParser", () => {
     const parser = configParser(sourceFile, inputFolder, outputFolder);
 
     const mdFile = await parser.process(
-      "Link to [nested](nested.md) and ![image](./assets/test.webp)."
+      "Link to [nested](nested.md) and ![image](./assets/testImage.webp)."
     );
 
     assert(mdFile.value.includes('href="nested.html"'));
-    assert(mdFile.value.includes('src="./assets/test.webp"'));
+    assert(mdFile.value.includes('src="./assets/testImage.webp"'));
   });
 
   it("renders iframe and html tags by default", async () => {

@@ -18,6 +18,15 @@ export const fileExists = async (filePath) => {
   }
 };
 
+export const folderEmpty = async (folderPath) => {
+  try {
+    const outputFiles = await fs.readdir(folderPath);
+    return outputFiles.length === 0;
+  } catch {
+    return false;
+  }
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -69,20 +78,26 @@ export const isUrl = (string) => {
   return true;
 };
 
-async function findImageRecursive(imageName, currentSearchDir, initialDirParam = null, baseDirParam = null) {
-  const initialDir = initialDirParam === null ? currentSearchDir : initialDirParam;
+async function findImageRecursive(
+  imageName,
+  currentSearchDir,
+  initialDirParam = null,
+  baseDirParam = null
+) {
+  const initialDir =
+    initialDirParam === null ? currentSearchDir : initialDirParam;
   const baseDir = baseDirParam === null ? initialDir : baseDirParam;
 
   // Normalize slashes for path separator check and for returned paths
-  const normalizedImageName = imageName.replace(/\\/g, '/');
+  const normalizedImageName = imageName.replace(/\\/g, "/");
 
-  if (normalizedImageName.includes('/')) {
+  if (normalizedImageName.includes("/")) {
     // imageName is a path (e.g., "folder/image.png")
     const absoluteImagePath = path.resolve(baseDir, normalizedImageName);
     try {
       const stats = await fs.stat(absoluteImagePath);
       if (stats.isFile()) {
-        return path.relative(initialDir, absoluteImagePath).replace(/\\/g, '/');
+        return path.relative(initialDir, absoluteImagePath).replace(/\\/g, "/");
       } else {
         return null; // Exists but is not a file
       }
@@ -97,7 +112,7 @@ async function findImageRecursive(imageName, currentSearchDir, initialDirParam =
       const directFilePath = path.join(currentSearchDir, normalizedImageName);
       const stats = await fs.stat(directFilePath);
       if (stats.isFile()) {
-        return path.relative(initialDir, directFilePath).replace(/\\/g, '/');
+        return path.relative(initialDir, directFilePath).replace(/\\/g, "/");
       }
     } catch (e) {
       // Not found directly in currentSearchDir or error, proceed to scan subdirectories
@@ -105,23 +120,30 @@ async function findImageRecursive(imageName, currentSearchDir, initialDirParam =
 
     // 2. Scan subdirectories
     try {
-      const entries = await fs.readdir(currentSearchDir, { withFileTypes: true });
+      const entries = await fs.readdir(currentSearchDir, {
+        withFileTypes: true,
+      });
       for (const entry of entries) {
         if (entry.isDirectory()) {
-          if (entry.name === 'node_modules' || entry.name === '.git') {
+          if (entry.name === "node_modules" || entry.name === ".git") {
             continue;
           }
           const subDirPath = path.join(currentSearchDir, entry.name);
           // Recursively call with the simple imageName, new subDirPath, but same initialDir and baseDir
-          const result = await findImageRecursive(normalizedImageName, subDirPath, initialDir, baseDir);
+          const result = await findImageRecursive(
+            normalizedImageName,
+            subDirPath,
+            initialDir,
+            baseDir
+          );
           if (result) {
-            return result.replace(/\\/g, '/'); // Ensure forward slashes
+            return result.replace(/\\/g, "/"); // Ensure forward slashes
           }
         }
       }
     } catch (error) {
       // Ignore errors like EACCES (permission denied) or ENOENT (file not found for readdir itself)
-      if (error.code !== 'EACCES' && error.code !== 'ENOENT') {
+      if (error.code !== "EACCES" && error.code !== "ENOENT") {
         console.error(`Error reading directory ${currentSearchDir}:`, error);
       }
     }
