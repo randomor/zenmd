@@ -53,7 +53,7 @@ zenmd ...
   - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
 - Layout option via `--layout` to select a built-in theme (currently `default`, `matrix` or `cyberpunk`) when no custom layout.html is provided.
-  - Support layout ejection, so you can customize the layout: `zenmd eject --layout <default|matrix|cyberpunk>`
+  - Support layout ejection, so you can customize the layout: `zenmd eject --layout <default|matrix|cyberpunk>`. This will create a `layout.html` in _current directory_.
 - Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
 - Generates `sitemap.xml` at the output directory.
