@@ -1,6 +1,23 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { fileExists, normalizePath, findLayout, isUrl } from "./utils.js";
+import fs from 'fs/promises';
+import path from 'path';
+import { fileExists, normalizePath, findLayout, isUrl, findImageRecursive } from "./utils.js";
+
+// Helper function to create directories recursively if they don't exist
+async function ensureDir(dirPath) {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (error) {
+    if (error.code !== 'EEXIST') {
+      throw error;
+    }
+  }
+}
+
+// __dirname is not available in ES modules directly, so we derive it
+const __filename = path.resolve(import.meta.url.substring(import.meta.url.startsWith('file:') ? 7 : 0));
+const __dirname = path.dirname(__filename);
 
 describe("fileExists", () => {
   it("returns true if file exists", async () => {
@@ -86,3 +103,106 @@ describe("isUrl", () => {
   });
 });
 
+describe("findImageRecursive", () => {
+  const testDir = path.join(__dirname, 'temp-test-dir-findImageRecursive');
+
+  // Files for the new structure:
+  const image1 = 'image1.png'; // in testDir root
+  const image2 = 'image2.png'; // in testDir/subfolder
+  const image4 = 'image4.png'; // in testDir/subfolder/deepfolder
+  const imageSibling = 'image_sibling.png'; // in testDir/subfolder, for ../ traversal test
+
+  beforeEach(async () => {
+    // Base directories
+    await ensureDir(testDir);
+    const subfolderPath = path.join(testDir, 'subfolder');
+    const deepfolderPath = path.join(subfolderPath, 'deepfolder');
+    const anotherfolderPath = path.join(testDir, 'anotherfolder');
+
+    await ensureDir(subfolderPath);
+    await ensureDir(deepfolderPath);
+    await ensureDir(anotherfolderPath);
+
+    // Create files
+    await fs.writeFile(path.join(testDir, image1), 'image1 content');
+    await fs.writeFile(path.join(subfolderPath, image2), 'image2 content');
+    await fs.writeFile(path.join(deepfolderPath, image4), 'image4 content');
+    await fs.writeFile(path.join(subfolderPath, imageSibling), 'imageSibling content');
+    await fs.writeFile(path.join(anotherfolderPath, 'another-file.txt'), 'dummy text content'); // For existing structure compatibility if any test depends on anotherfolder
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.rm(testDir, { recursive: true, force: true });
+    } catch (error) {
+      console.warn(`Warning: Could not fully clean up ${testDir}. Error: ${error.message}`);
+    }
+  });
+
+  // Existing tests adapted or confirmed
+  it("should find an image (simple name) nested deeply when search starts from root", async () => {
+    // This test replaces the old "should find an image nested in subdirectories"
+    // image4.png is in subfolder/deepfolder/image4.png
+    const foundPath = await findImageRecursive(image4, testDir);
+    const expectedPath = path.join('subfolder', 'deepfolder', image4).replace(/\\/g, '/');
+    assert.strictEqual(foundPath, expectedPath, `Expected to find ${image4} at ${expectedPath}, but got ${foundPath}`);
+  });
+
+  it("should return null if the image (simple name) is not found anywhere", async () => {
+    const foundPath = await findImageRecursive('non-existent-simple.png', testDir);
+    assert.strictEqual(foundPath, null, `Expected to get null for non-existent-simple.png, but got ${foundPath}`);
+  });
+
+  it("should return null if the starting directory does not exist", async () => {
+    const foundPath = await findImageRecursive(image1, path.join(testDir, 'non-existent-start-dir'));
+    assert.strictEqual(foundPath, null, `Expected to get null for non-existent starting directory, but got ${foundPath}`);
+  });
+
+  it("should find an image (simple name) in the root of the search directory", async () => {
+    // This test is similar to an old one, confirms image1.png in testDir root
+    const foundPath = await findImageRecursive(image1, testDir);
+    assert.strictEqual(foundPath, image1, `Expected to find ${image1} at ${image1}, but got ${foundPath}`);
+  });
+
+  // New test cases for explicit paths
+  it("should find an image via explicit path 'subfolder/image2.png' when search starts from root", async () => {
+    const explicitPath = path.join('subfolder', image2).replace(/\\/g, '/');
+    const foundPath = await findImageRecursive(explicitPath, testDir);
+    assert.strictEqual(foundPath, explicitPath, `Expected to find at ${explicitPath}, but got ${foundPath}`);
+  });
+
+  it("should find an image via explicit path 'subfolder/deepfolder/image4.png' when search starts from root", async () => {
+    const explicitPath = path.join('subfolder', 'deepfolder', image4).replace(/\\/g, '/');
+    const foundPath = await findImageRecursive(explicitPath, testDir);
+    assert.strictEqual(foundPath, explicitPath, `Expected to find at ${explicitPath}, but got ${foundPath}`);
+  });
+
+  it("should return null for an explicit path 'subfolder/nonexistent.png' if file is missing", async () => {
+    const explicitPath = path.join('subfolder', 'nonexistent.png').replace(/\\/g, '/');
+    const foundPath = await findImageRecursive(explicitPath, testDir);
+    assert.strictEqual(foundPath, null, `Expected null for missing explicit path, but got ${foundPath}`);
+  });
+
+  it("should return null for an explicit path 'nonexistentfolder/image1.png' if intermediate folder is missing", async () => {
+    const explicitPath = path.join('nonexistentfolder', image1).replace(/\\/g, '/');
+    const foundPath = await findImageRecursive(explicitPath, testDir);
+    assert.strictEqual(foundPath, null, `Expected null for path with missing intermediate folder, but got ${foundPath}`);
+  });
+
+  it("should find an image via explicit path which is a simple filename already in currentSearchDir (root)", async () => {
+    // This is effectively the same as "should find an image (simple name) in the root of the search directory"
+    // but confirms behavior when explicit path === simple name
+    const foundPath = await findImageRecursive(image1, testDir); // image1 is 'image1.png'
+    assert.strictEqual(foundPath, image1, `Expected to find ${image1} directly, but got ${foundPath}`);
+  });
+
+  it("should find an image using explicit relative path with '../' traversal", async () => {
+    const searchStartDir = path.join(testDir, 'anotherfolder');
+    // imageSibling is in testDir/subfolder/image_sibling.png
+    // from testDir/anotherfolder, path is ../subfolder/image_sibling.png
+    const relativePath = path.join('..', 'subfolder', imageSibling).replace(/\\/g, '/');
+    const foundPath = await findImageRecursive(relativePath, searchStartDir);
+    assert.strictEqual(foundPath, relativePath, `Expected to find at ${relativePath} from ${searchStartDir}, but got ${foundPath}`);
+  });
+
+});

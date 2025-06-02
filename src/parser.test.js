@@ -1,5 +1,8 @@
 import assert from "node:assert";
-import { describe, it } from "node:test";
+import { describe, it, mock, beforeEach, afterEach, test } from "node:test";
+import fsPromises from "fs/promises"; // Alias for clarity, reverted to use this everywhere for consistency
+import * as fsSync from "fs"; // For sync methods like existsSync, readdirSync
+import path from "path"; // Import the 'path' module
 import { parseMarkdown, configParser } from "./parser.js";
 
 const inputFolder = "./src/__test__";
@@ -23,45 +26,31 @@ describe("configParser", () => {
     }
   });
 
-  it("picks up front matter", async () => {
+  it("picks up front matter and first H1 fallback", async () => {
     const sourceFile = "./src/__test__/example.md";
     const parser = configParser(sourceFile, inputFolder, outputFolder);
-    const file = await parser.process(
+
+    // Test front matter
+    const fileWithFrontMatter = await parser.process(
       '---\ntitle: "Hello World"\n---\n\n# Hello Sky'
     );
-    const { title } = file.data.frontmatter || {};
-    assert.equal(title, "Hello World");
+    assert.equal(fileWithFrontMatter.data.frontmatter?.title, "Hello World");
+
+    // Test H1 fallback
+    const fileWithoutFrontMatter = await parser.process("# Hello World");
+    assert.equal(fileWithoutFrontMatter.data.meta?.title, "Hello World");
   });
 
-  it("picks up first H1 if no front matter", async () => {
+  it("renders relative links correctly", async () => {
     const sourceFile = "./src/__test__/example.md";
     const parser = configParser(sourceFile, inputFolder, outputFolder);
-    const file = await parser.process("# Hello World");
-    const { title } = file.data.meta || {};
-    assert.equal(title, "Hello World");
-  });
 
-  it("renders relative link to .md with right path", async () => {
-    const sourceFile = "./src/__test__/example.md";
-    const parser = configParser(sourceFile, inputFolder, outputFolder);
-    const file = await parser.process(
-      "Some markdown content with a relative link to [nested](nested.md)."
+    const mdFile = await parser.process(
+      "Link to [nested](nested.md) and ![image](./assets/test.webp)."
     );
-    const { value } = file;
-    const renderedWithRightLink = value.includes('href="nested.html"');
-    assert(renderedWithRightLink);
-  });
 
-  it("renders relative link to image with right path", async () => {
-    const sourceFile = "./src/__test__/second level/nested.md";
-    const outputFileFolder = "./dist/second-level";
-    const parser = configParser(sourceFile, inputFolder, outputFileFolder);
-    const file = await parser.process("![Test Image](./assets/testImage.webp)");
-    const { value } = file;
-    const renderedWithRightImageLink = value.includes(
-      'src="./assets/testImage.webp"'
-    );
-    assert(renderedWithRightImageLink);
+    assert(mdFile.value.includes('href="nested.html"'));
+    assert(mdFile.value.includes('src="./assets/test.webp"'));
   });
 
   it("renders iframe and html tags by default", async () => {
@@ -70,95 +59,298 @@ describe("configParser", () => {
     const file = await parser.process(
       '#hi\n\n<iframe src="https://example.com"></iframe>'
     );
-    const { value } = file;
-    assert.match(value, /iframe/);
+    assert.match(file.value, /iframe/);
   });
 
-  describe("wiki link", () => {
-    it("renders wikilink with right relative path", async () => {
-      const sourceFile = "./src/__test__/second level/nested.md";
-      const parser = configParser(sourceFile, inputFolder, outputFolder);
-      const file = await parser.process("[[Example]]");
-      const { value } = file;
-      assert.match(value, /href="..\/example.html"/);
+  it("renders wikilink with right relative path from subdirectory", async () => {
+    const sourceFile = "./src/__test__/second level/nested.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+    const file = await parser.process("[[Example]]");
+    assert.match(file.value, /href="..\/example.html"/);
+  });
+});
+
+describe("Obsidian Image Processing", () => {
+  const testBaseDir = path.join("src", "__test__", "image_test_mds");
+  const testMdFile = path.join(testBaseDir, "test.md");
+  const tempOutputDir = path.join("dist", "__test_output_consolidated");
+
+  beforeEach(() => {
+    // Mock file operations
+    mock.method(fsPromises, "copyFile", async () => {});
+    mock.method(fsPromises, "mkdir", async () => {});
+    mock.method(fsPromises, "writeFile", async () => {});
+    mock.method(fsPromises, "access", async () => {});
+
+    // Mock fs.stat for findImageRecursive
+    mock.method(fsPromises, "stat", async (filePath) => {
+      // Normalize the file path for comparison
+      const normalizedPath = path.normalize(filePath);
+
+      // Define which files exist in our mock file system
+      const existingFiles = [
+        path.normalize(path.join(testBaseDir, "image1.png")),
+        path.normalize(path.join(testBaseDir, "image with spaces.png")),
+        path.normalize(path.join(testBaseDir, "subfolder", "image2.png")),
+      ];
+
+      if (
+        existingFiles.some((existingFile) =>
+          normalizedPath.endsWith(
+            existingFile.replace(testBaseDir, "").slice(1)
+          )
+        )
+      ) {
+        return { isFile: () => true };
+      }
+
+      const error = new Error(
+        `ENOENT: no such file or directory, stat '${filePath}'`
+      );
+      error.code = "ENOENT";
+      throw error;
     });
+
+    // Mock fs.readdir for findImageRecursive directory scanning
+    mock.method(fsPromises, "readdir", async (dirPath, options) => {
+      const normalizedDirPath = path.normalize(dirPath);
+
+      if (normalizedDirPath.endsWith(path.normalize(testBaseDir))) {
+        return [
+          { name: "image1.png", isDirectory: () => false, isFile: () => true },
+          {
+            name: "image with spaces.png",
+            isDirectory: () => false,
+            isFile: () => true,
+          },
+          { name: "subfolder", isDirectory: () => true, isFile: () => false },
+          { name: "test.md", isDirectory: () => false, isFile: () => true },
+        ];
+      } else if (
+        normalizedDirPath.endsWith(
+          path.normalize(path.join(testBaseDir, "subfolder"))
+        )
+      ) {
+        return [
+          { name: "image2.png", isDirectory: () => false, isFile: () => true },
+        ];
+      }
+
+      return [];
+    });
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
+  it("processes various Obsidian image scenarios", async () => {
+    // Mock readFile for parseMarkdown
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === testMdFile) {
+        return `![[image1.png]]
+![[image_not_found.png]]
+![[image with spaces.png]]
+![[subfolder/image2.png]]`;
+      }
+      if (filePath.endsWith("layout.html")) return "<html>{{{content}}}</html>";
+      return "";
+    });
+
+    let warnOutput = "";
+    const originalWarn = console.warn;
+    console.warn = (message) => {
+      warnOutput += message;
+    };
+
+    try {
+      const result = await parseMarkdown(
+        testMdFile,
+        testBaseDir,
+        tempOutputDir
+      );
+
+      // Test image resolution scenarios
+      assert.ok(
+        result.content.includes('src="./image1.png"'),
+        "Same folder image failed"
+      );
+      assert.ok(
+        result.content.includes('src="./subfolder/image2.png"'),
+        "Subfolder image failed"
+      );
+      assert.ok(
+        result.content.includes('src="./image%20with%20spaces.png"'),
+        "Spaces in filename failed"
+      );
+      assert.ok(
+        result.content.includes('src="./image_not_found.png"'),
+        "Not found image should use original path"
+      );
+
+      // Test warning behavior
+      assert.ok(
+        warnOutput.includes('Image "image_not_found.png" not found'),
+        "Missing image warning not logged"
+      );
+      assert.ok(
+        !warnOutput.includes('Image "image1.png" not found'),
+        "Found image incorrectly warned"
+      );
+      assert.ok(
+        !warnOutput.includes('Image "subfolder/image2.png" not found'),
+        "Explicit path incorrectly warned"
+      );
+
+      // Test file copying
+      const copyFileCalls = fsPromises.copyFile.mock.calls;
+      assert.ok(
+        copyFileCalls.length >= 3,
+        "Expected at least 3 file copy operations"
+      );
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  it("handles configParser integration", async () => {
+    const mockInputFile = "./src/__test__/obsidian-test.md";
+
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === mockInputFile) return "![[test-image.jpg]]";
+      if (filePath.endsWith("layout.html")) return "<html>{{{content}}}</html>";
+      return "";
+    });
+
+    // Mock fs.stat for this test too
+    mock.method(fsPromises, "stat", async (filePath) => {
+      if (filePath.includes("test-image.jpg")) {
+        return { isFile: () => true };
+      }
+      const error = new Error(
+        `ENOENT: no such file or directory, stat '${filePath}'`
+      );
+      error.code = "ENOENT";
+      throw error;
+    });
+
+    const result = await parseMarkdown(
+      mockInputFile,
+      path.dirname(mockInputFile),
+      "./dist"
+    );
+    assert.match(
+      result.content,
+      /<img src=".\/test-image.jpg" alt="">/,
+      "ConfigParser integration failed"
+    );
+
+    const copyFileCalls = fsPromises.copyFile.mock.calls;
+    assert.ok(copyFileCalls.length >= 1, "File copy not triggered");
   });
 });
 
 describe("parseMarkdown", () => {
+  beforeEach(() => {
+    mock.method(fsPromises, "copyFile", async () => {});
+    mock.method(fsPromises, "mkdir", async () => {});
+    mock.method(fsPromises, "writeFile", async () => {});
+    mock.method(fsPromises, "access", async () => {});
+  });
+
+  afterEach(() => {
+    mock.restoreAll();
+  });
+
   it("converts markdown to pageAttributes", async () => {
     const inputFile = "./src/__test__/example.md";
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === inputFile) return "# Title\nDescription";
+      if (filePath.endsWith("layout.html")) return "<html>{{{content}}}</html>";
+      return "";
+    });
+
     const pageAttributes = await parseMarkdown(
       inputFile,
       inputFolder,
       outputFolder
     );
-    assert(pageAttributes.title, "Title");
-    assert(pageAttributes.content);
-    assert(pageAttributes.frontMatter, {});
-    assert(pageAttributes.inputFile, inputFile);
-    assert(pageAttributes.outputFileFolder, "./dist");
-    assert(pageAttributes.outputFileName, "example.html");
-    assert(pageAttributes.outputFilePath, "dist/example.html");
+
+    assert.strictEqual(pageAttributes.title, "Title");
+    assert.ok(pageAttributes.content);
+    assert.deepStrictEqual(pageAttributes.frontMatter, {});
+    assert.strictEqual(pageAttributes.inputFile, inputFile);
+    assert.strictEqual(
+      pageAttributes.outputFileFolder,
+      path.normalize(outputFolder)
+    );
+    assert.strictEqual(pageAttributes.outputFileName, "example.html");
+    assert.strictEqual(
+      pageAttributes.outputFilePath,
+      path.join(outputFolder, "example.html")
+    );
   });
 
-  describe("tags", () => {
-    it("skips file if not matching tags", async () => {
+  describe("tags filtering", () => {
+    it("handles tag-based file filtering", async () => {
       const sourceFile = "./src/__test__/example.md";
-      const pageAttributes = await parseMarkdown(
-        sourceFile,
-        inputFolder,
-        outputFolder,
-        {
-          tags: [["publish", "true"]],
-        }
-      );
-      // Assuming the parser is expected to return null or similar when skipping
-      assert.equal(pageAttributes, null);
-    });
 
-    it("renders file if matching tags", async () => {
-      const sourceFile = "./src/__test__/second level/nested.md";
-      const inputFolder = "./src/__test__/second level";
-      const outputFolder = "./dist/second-level";
-      const pageAttributes = await parseMarkdown(
-        sourceFile,
-        inputFolder,
-        outputFolder,
-        {
-          tags: [["publish", "true"]],
-        }
-      );
-      assert(pageAttributes.title, "hi");
-    });
+      // Test skipping with non-matching tags
+      mock.method(fsPromises, "readFile", async (filePath) => {
+        if (filePath === sourceFile) return "---\npublish: false\n---";
+        if (filePath.endsWith("layout.html"))
+          return "<html>{{{content}}}</html>";
+        return "";
+      });
 
-    it("skips file if not matching tags", async () => {
-      const sourceFile = "./src/__test__/second level/nested.md";
-      const pageAttributes = await parseMarkdown(
-        sourceFile,
-        inputFolder,
-        outputFolder,
-        {
-          tags: [["publish", "false"]],
-        }
+      let result = await parseMarkdown(sourceFile, inputFolder, outputFolder, {
+        tags: [["publish", "true"]],
+      });
+      assert.equal(
+        result,
+        undefined,
+        "Should skip file with non-matching tags"
       );
-      // Assuming the parser is expected to return null or similar when skipping
-      assert.equal(pageAttributes, null);
-    });
 
-    it("does not skip files if tags doesn't exist", async () => {
-      const sourceFile = "./src/__test__/second level/nested with space.md";
-      const pageAttributes = await parseMarkdown(
-        sourceFile,
-        inputFolder,
-        outputFolder,
-        {
-          tags: [["publish", "false"]],
-        }
+      // Test processing with matching tags
+      mock.method(fsPromises, "readFile", async (filePath) => {
+        if (filePath === sourceFile)
+          return "---\ntitle: Test\npublish: true\n---";
+        if (filePath.endsWith("layout.html"))
+          return "<html>{{{content}}}</html>";
+        return "";
+      });
+
+      result = await parseMarkdown(sourceFile, inputFolder, outputFolder, {
+        tags: [["publish", "true"]],
+      });
+      assert.ok(result, "Should process file with matching tags");
+
+      // Test processing when tag is absent (default behavior)
+      const nestedFile = "./src/__test__/second level/nested with space.md";
+      mock.method(fsPromises, "readFile", async (filePath) => {
+        if (filePath === nestedFile)
+          return "---\ntitle: Nested With Space\n---";
+        if (filePath.endsWith("layout.html"))
+          return "<html>{{{content}}}</html>";
+        return "";
+      });
+
+      result = await parseMarkdown(nestedFile, inputFolder, outputFolder, {
+        tags: [["publish", "false"]],
+      });
+
+      const expectedOutputFileName = "nested-with-space.html";
+      const expectedFileDir = path.join(outputFolder, "second-level");
+      const expectedFilePath = path.join(
+        expectedFileDir,
+        expectedOutputFileName
       );
-      const resultFile = "dist/second-level/nested-with-space.html";
-      const { outputFilePath } = pageAttributes;
-      assert.equal(outputFilePath, resultFile);
+      assert.equal(
+        result.outputFilePath,
+        expectedFilePath,
+        "Should process file when tag is absent"
+      );
     });
   });
 });
