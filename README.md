@@ -38,7 +38,8 @@ zenmd ...
 
 ## Principles
 
-- **Simplicity at its Core**: Just a `npx` command away to transform your markdown files into a minimalistic static site.
+- **Simplicity First**: Transform your markdown files into a clean, minimalistic static site with a single `npx` command.
+- **Convention over Configuration**: Focus on your content while ZenMD handles the technical details, making smart defaults that work out of the box.
 
 ## Features
 
@@ -52,6 +53,7 @@ zenmd ...
   - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
 - Layout option via `--layout` to select a built-in theme (currently `default`, `matrix` or `cyberpunk`) when no custom layout.html is provided.
+  - Support layout ejection, so you can customize the layout: `zenmd eject --layout <default|matrix|cyberpunk>`
 - Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
 - Generates `sitemap.xml` at the output directory.
@@ -63,8 +65,8 @@ zenmd ...
 
 Here is a list of known gaps:
 
-- This may only support a subset of your favorite markdown syntax. For example, if you work with Obsidian, your image reference will work with `![](image.jpeg)`, with ZenMD it needs to be more specific `![](./assets/image.jpeg)`
 - The generated site doesn't have a RSS feed.
+- The generated site doesn't have default OG metatags, unless you override the default layout.
 
 Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
 
