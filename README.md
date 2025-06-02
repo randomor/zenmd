@@ -46,6 +46,7 @@ zenmd ...
   - GFM markdown, with all the features supported by [remark-gfm](https://github.com/remarkjs/remark-gfm).
     - That includes table, footnotes, even raw html tags, e.g.: iframe for embeds.
   - Support images in markdown files.
+    - Includes Obsidian-style image syntax `![[image-path.png]]` with smart path resolution: searches current directory first, then recursively through subdirectories.
   - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
   - Support raw html in markdown
