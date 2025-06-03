@@ -326,7 +326,7 @@ publish: false
       );
       assert.match(
         result.stdout,
-        /Filtering match files by tags:/,
+        /Filtering matched files by tags:/,
         "Should show tag filtering message"
       );
       assert.match(
