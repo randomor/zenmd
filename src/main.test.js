@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { describe, it, beforeEach, mock } from "node:test";
+import { describe, it, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import path from "path";
 
@@ -8,6 +8,10 @@ describe("processFolder", () => {
   const outputFolder = "./dist";
   beforeEach(
     async () => await fs.rm(outputFolder, { recursive: true, force: true })
+  );
+  afterEach(
+    async () =>
+      await fs.rm(path.join(outputFolder, "robots.txt"), { force: true })
   );
 
   it("picks markdown and convert", async () => {
@@ -76,6 +80,21 @@ describe("processFolder", () => {
 
     assert.strictEqual(parser.mock.calls.length, 3);
     assert.strictEqual(parser.mock.calls[0].arguments[3].tags, tags);
+  });
+
+  it("generates a default robots.txt", async () => {
+    const { processFolder } = await import("./main.js");
+    await processFolder(inputFolder, outputFolder);
+
+    const robotsPath = path.join(outputFolder, "robots.txt");
+    const exists = await fs
+      .access(robotsPath)
+      .then(() => true)
+      .catch(() => false);
+    assert.ok(exists, "robots.txt should exist");
+
+    const content = await fs.readFile(robotsPath, "utf-8");
+    assert.ok(content.includes("User-agent: *\nDisallow:"));
   });
 });
 
