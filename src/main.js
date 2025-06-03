@@ -23,13 +23,10 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const inputGlob = isFileArg ? inputArg : path.join(inputFolder, "**/*.md");
     const files = await glob(inputGlob, globOptions);
 
-    const pageAttributesList = await Promise.all(
-      files
-        .map(async (file) => {
-          return parse(file, inputFolder, outputFolder, options);
-        })
-        .filter((pageAttributes) => pageAttributes)
+    const pagePromises = files.map((file) =>
+      parse(file, inputFolder, outputFolder, options)
     );
+    const pageAttributesList = (await Promise.all(pagePromises)).filter(Boolean);
 
     // render SiteMap
     if (sitemap && baseUrl) {

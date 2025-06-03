@@ -77,6 +77,44 @@ describe("processFolder", () => {
     assert.strictEqual(parser.mock.calls.length, 3);
     assert.strictEqual(parser.mock.calls[0].arguments[3].tags, tags);
   });
+
+  it("skips pages returning undefined", async () => {
+    const { processFolder } = await import("./main.js");
+    const parser = mock.fn((file) => {
+      if (file.includes("second level/nested.md")) return undefined;
+      return {
+        title: "Example",
+        content: "Hello World",
+        frontMatter: {},
+        inputFile: file,
+        inputFolder,
+        outputFileFolder: outputFolder,
+        outputFileName: path.basename(file, ".md") + ".html",
+        outputFilePath: path.join(
+          outputFolder,
+          path.basename(file, ".md") + ".html"
+        ),
+      };
+    });
+
+    const renderHtmlPageMock = mock.fn();
+    const renderSitemapMock = mock.fn();
+
+    await processFolder(inputFolder, outputFolder, {
+      parser,
+      renderHtmlPage: renderHtmlPageMock,
+      renderSitemap: renderSitemapMock,
+      sitemap: true,
+      baseUrl: "https://example.com",
+    });
+
+    // parser called for all files
+    assert.strictEqual(parser.mock.calls.length, 3);
+    // One page skipped, so only two pages rendered
+    assert.strictEqual(renderHtmlPageMock.mock.calls.length, 2);
+    const [pages] = renderSitemapMock.mock.calls[0].arguments;
+    assert.strictEqual(pages.length, 2);
+  });
 });
 
 describe("processFolder - Sitemap", () => {
