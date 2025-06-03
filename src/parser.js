@@ -32,8 +32,9 @@ export const configParser = (
     .use(remarkParse)
     .use(remarkFrontmatter)
     .use(remarkParseFrontmatter)
-    // 1. remarkWikiLink: Parses [[wikiLinks]] and ![[embeds]] into 'wikiLink' mdast nodes.
-    // data.isEmbed will be true for ![[embeds]].
+    // 1. remarkWikiLink: Handles [[wikiLinks]] and outputs 'wikiLink' mdast nodes.
+    // Obsidian-style ![[...]] image embeds are already converted to standard
+    // Markdown images in parseMarkdown, so remark-wiki-link only sees wiki links.
     .use(remarkWikiLink, {
       pageResolver: (name) => [
         path.join(relativePathToInputFolder, normalizePath(name)),
@@ -41,8 +42,8 @@ export const configParser = (
       hrefTemplate: (permalink) => `${permalink}.html`, // Only for non-embed links
     })
     // 2. remarkGfm: Standard GFM processing.
-    // Obsidian image embeds are now pre-processed into standard Markdown images
-    // so no special remark plugin is needed for them here.
+    // Obsidian image embeds are pre-processed into standard Markdown images in
+    // parseMarkdown, so no special remark plugin is needed for them here.
     .use(remarkGfm)
     // 4. Link normalizer for .md extensions in standard links.
     .use(() => (tree) => {
