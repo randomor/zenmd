@@ -18,7 +18,7 @@ const runBuildCommand = async (argv) => {
   console.log(chalk.blue("Input: "), chalk.green(argv.input));
   if (argv.tags) {
     console.log(
-      chalk.blue("Filtering match files by tags: "),
+      chalk.blue("Filtering matched files by tags: "),
       chalk.green(argv.tags)
     );
   }
