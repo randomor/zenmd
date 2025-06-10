@@ -50,6 +50,7 @@ zenmd ...
     - Includes Obsidian-style image syntax `![[image-path.png]]` with smart path resolution: searches current directory first, then recursively through subdirectories.
   - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
+  - Table of contents generation when a `## Table of contents` or `## Contents` section is present.
   - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
 - Layout option via `--layout` to select a built-in theme (currently `default`, `matrix` or `cyberpunk`) when no custom layout.html is provided.
@@ -79,6 +80,7 @@ Feel free to create an issue or submit a PR on Github if you notice more deal br
 ## References
 
 - Built with [remark](https://github.com/remarkjs/remark)
+- Table of contents powered by [remark-toc](https://github.com/remarkjs/remark-toc)
 - Default theme used [SimpleCss](https://simplecss.org/)
 - Cyberpunk theme used [Cyberpunk Color Palette
   by mishiki](https://www.color-hex.com/color-palette/14887)
