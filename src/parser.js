@@ -5,6 +5,7 @@ import remarkRehype from "remark-rehype";
 import remarkWikiLink from "remark-wiki-link";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkParseFrontmatter from "remark-parse-frontmatter";
+import remarkToc from "remark-toc";
 import rehypeSlug from "rehype-slug";
 import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
@@ -45,6 +46,9 @@ export const configParser = (
     // Obsidian image embeds are pre-processed into standard Markdown images in
     // parseMarkdown, so no special remark plugin is needed for them here.
     .use(remarkGfm)
+    // 3. remarkToc: Generate table of contents when a `## Contents` or
+    //    `## Table of contents` heading is present.
+    .use(remarkToc)
     // 4. Link normalizer for .md extensions in standard links.
     .use(() => (tree) => {
       visit(tree, "link", (node) => {

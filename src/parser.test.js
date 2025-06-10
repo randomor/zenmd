@@ -68,6 +68,14 @@ describe("configParser", () => {
     const file = await parser.process("[[Example]]");
     assert.match(file.value, /href="..\/example.html"/);
   });
+
+  it("generates table of contents from headings", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+    const md = "# Title\n\n## Table of contents\n\n## Section";
+    const file = await parser.process(md);
+    assert.match(file.value, /href=\"#section\"/);
+  });
 });
 
 describe("Obsidian Image Processing", () => {
