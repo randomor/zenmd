@@ -39,6 +39,7 @@ const runBuildCommand = async (argv) => {
       // Default to option but take env variable if not provided, for sitemap generation
       baseUrl: argv.baseUrl || process.env.BASE_URL,
       layout: argv.layout,
+      cleanLink: argv.cleanLink,
     });
   };
 
@@ -134,6 +135,11 @@ const argv = yargs(hideBin(process.argv))
       "Layout style when no custom layout is provided (default, matrix or cyberpunk)",
     choices: ["default", "matrix", "cyberpunk"],
     default: "default",
+  })
+  .option("clean-link", {
+    alias: "c",
+    type: "boolean",
+    describe: "Do not append .html to auto generated wiki links",
   })
   .help()
   .alias("help", "h").argv;

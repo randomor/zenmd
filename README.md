@@ -48,7 +48,7 @@ zenmd ...
     - That includes table, footnotes, even raw html tags, e.g.: iframe for embeds.
   - Support images in markdown files.
     - Includes Obsidian-style image syntax `![[image-path.png]]` with smart path resolution: searches current directory first, then recursively through subdirectories.
-  - Wiki links: `[[Another Page]] => [Another Page](/another-page)`.
+  - Wiki links: `[[Another Page]] => [Another Page](/another-page.html)` by default. Use `--clean-link` (`-c`) to skip the `.html` suffix.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
   - Table of contents generation when a `## Table of contents` or `## Contents` section is present.
   - Support raw html in markdown
