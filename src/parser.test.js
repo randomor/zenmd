@@ -26,6 +26,30 @@ describe("configParser", () => {
     }
   });
 
+  it("supports cleanLink option to omit .html from wiki links", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(
+      sourceFile,
+      inputFolder,
+      outputFolder,
+      "",
+      { cleanLink: true }
+    );
+
+    const cleanCases = [
+      { input: "[[Home]]", expected: /href="home"/ },
+      { input: "[[About US]]", expected: /href="about-us"/ },
+      { input: "[[About_US]]", expected: /href="about_us"/ },
+      { input: "[[About US:About]]", expected: /href="about-us">About/ },
+    ];
+
+    for (const testCase of cleanCases) {
+      const html = await parser.process(testCase.input);
+      assert.match(html.value, testCase.expected);
+      assert(!html.value.includes(".html"));
+    }
+  });
+
   it("picks up front matter and first H1 fallback", async () => {
     const sourceFile = "./src/__test__/example.md";
     const parser = configParser(sourceFile, inputFolder, outputFolder);

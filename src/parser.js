@@ -22,8 +22,10 @@ export const configParser = (
   currentFile,
   inputFolder,
   outputFileFolder,
-  imageDir = ""
+  imageDir = "",
+  options = {}
 ) => {
+  const { cleanLink = false } = options;
   const relativePathToInputFolder = path.relative(
     path.dirname(currentFile),
     inputFolder
@@ -40,7 +42,8 @@ export const configParser = (
       pageResolver: (name) => [
         path.join(relativePathToInputFolder, normalizePath(name)),
       ],
-      hrefTemplate: (permalink) => `${permalink}.html`, // Only for non-embed links
+      hrefTemplate: (permalink) =>
+        cleanLink ? permalink : `${permalink}.html`, // Only for non-embed links
     })
     // 2. remarkGfm: Standard GFM processing.
     // Obsidian image embeds are pre-processed into standard Markdown images in
@@ -200,7 +203,9 @@ export const parseMarkdown = async (
     const processor = await configParser(
       inputFile,
       inputFolder,
-      outputFileFolder
+      outputFileFolder,
+      "",
+      options
     );
     const file = await processor.process(data);
     const frontMatter = file.data.frontmatter || {};

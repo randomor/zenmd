@@ -194,6 +194,33 @@ describe("index.js CLI Functions", () => {
       );
     });
 
+    it("should omit .html extension for wiki links with --clean-link", async () => {
+      await fs.mkdir("./test-input", { recursive: true });
+      await fs.writeFile(
+        "./test-input/example.md",
+        "# Example\n\n[[Other]]"
+      );
+      await fs.writeFile("./test-input/other.md", "# Other");
+
+      const result = await runCLI([
+        "./test-input",
+        "--output",
+        "./test-output",
+        "--force",
+        "--clean-link",
+      ]);
+
+      assert.strictEqual(
+        result.code,
+        0,
+        `CLI should exit with code 0, got ${result.code}. stderr: ${result.stderr}`
+      );
+
+      const html = await fs.readFile("./test-output/example.html", "utf8");
+      assert.match(html, /href=\"other\"/);
+      assert.doesNotMatch(html, /href=\"other\.html\"/);
+    });
+
     it("should show confirmation prompt when output folder exists and is not empty", async () => {
       // Create test input
       await fs.mkdir("./test-input", { recursive: true });
@@ -392,6 +419,7 @@ publish: false
         force: true,
         baseUrl: "https://example.com",
         layout: "cyberpunk",
+        cleanLink: true,
       };
 
       // Verify all options are properly typed
@@ -404,6 +432,7 @@ publish: false
         ["default", "matrix", "cyberpunk"].includes(buildOptions.layout),
         true
       );
+      assert.strictEqual(typeof buildOptions.cleanLink, "boolean");
     });
 
     it("should handle multiple tag filters", () => {
