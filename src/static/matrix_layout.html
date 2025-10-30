@@ -22,6 +22,7 @@
       color: #0f0;
       font-family: 'Courier New', Courier, monospace;
       line-height: 1.8;
+      overflow-x: clip; /* Prevent horizontal scrollbars from full-bleed images */
     }
 
     h1,
@@ -49,6 +50,15 @@
     footer p {
       color: #0f0;
       text-shadow: 0 0 5px #0f0;
+    }
+
+    /* Full-bleed image support - allows images to span full viewport width */
+    .bleed {
+      display: block;
+      width: 100vw;
+      max-width: 100vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
     }
   </style>
 </head>

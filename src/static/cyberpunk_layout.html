@@ -23,6 +23,7 @@
       color: #e0e0e0;
       font-family: 'Merriweather', serif;
       line-height: 1.8;
+      overflow-x: clip; /* Prevent horizontal scrollbars from full-bleed images */
     }
 
     h1 {
@@ -69,6 +70,15 @@
     footer p,
     footer p a {
       color: #001eff;
+    }
+
+    /* Full-bleed image support - allows images to span full viewport width */
+    .bleed {
+      display: block;
+      width: 100vw;
+      max-width: 100vw;
+      margin-left: 50%;
+      transform: translateX(-50%);
     }
   </style>
 </head>
