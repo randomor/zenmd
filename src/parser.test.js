@@ -100,6 +100,85 @@ describe("configParser", () => {
     const file = await parser.process(md);
     assert.match(file.value, /href=\"#section\"/);
   });
+
+  it("parses image attributes with id, class, width, and height", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithAttrs = "![Cat](cat.png){#hero-cat .rounded width=320 height=240}";
+    const file = await parser.process(mdWithAttrs);
+
+    // Check that all attributes are present
+    assert.match(file.value, /id="hero-cat"/);
+    assert.match(file.value, /class="rounded"/);
+    assert.match(file.value, /width="320"/);
+    assert.match(file.value, /height="240"/);
+  });
+
+  it("parses image attributes with multiple classes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithMultipleClasses = "![Hero](hero.jpg){.bleed .rounded .shadow}";
+    const file = await parser.process(mdWithMultipleClasses);
+
+    // Check that all classes are present
+    assert.match(file.value, /class="bleed rounded shadow"/);
+  });
+
+  it("parses image attributes with only id", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithId = "![Logo](logo.svg){#company-logo}";
+    const file = await parser.process(mdWithId);
+
+    assert.match(file.value, /id="company-logo"/);
+  });
+
+  it("parses image attributes with only classes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithClasses = "![Banner](banner.jpg){.full-width .center}";
+    const file = await parser.process(mdWithClasses);
+
+    assert.match(file.value, /class="full-width center"/);
+  });
+
+  it("parses image attributes with only dimensions", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithDimensions = "![Thumbnail](thumb.png){width=150 height=150}";
+    const file = await parser.process(mdWithDimensions);
+
+    assert.match(file.value, /width="150"/);
+    assert.match(file.value, /height="150"/);
+  });
+
+  it("parses image attributes with data attributes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithDataAttrs = "![Photo](photo.jpg){data-src=\"lazy.jpg\" data-loading=\"lazy\"}";
+    const file = await parser.process(mdWithDataAttrs);
+
+    assert.match(file.value, /data-src="lazy.jpg"/);
+    assert.match(file.value, /data-loading="lazy"/);
+  });
+
+  it("handles images without attributes normally", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const normalMd = "![Normal](normal.jpg)";
+    const file = await parser.process(normalMd);
+
+    // Should still render normally without extra attributes
+    assert.match(file.value, /src="\.\/normal\.jpg"/);
+    assert.match(file.value, /alt="Normal"/);
+  });
 });
 
 describe("Obsidian Image Processing", () => {
