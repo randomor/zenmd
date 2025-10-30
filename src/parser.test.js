@@ -319,6 +319,41 @@ Some content here.
     assert.ok(pageAttributes.content.includes('class="center"'));
     assert.ok(pageAttributes.content.includes('width="200"'));
   });
+
+  it("removes attribute syntax from output HTML", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithAttrs = "![Cat](cat.png){#hero-cat .rounded width=320}";
+    const file = await parser.process(mdWithAttrs);
+
+    // Should have the attributes applied
+    assert.match(file.value, /id="hero-cat"/);
+    assert.match(file.value, /class="rounded"/);
+    assert.match(file.value, /width="320"/);
+
+    // Should NOT have the curly brace syntax in the output
+    assert.doesNotMatch(file.value, /\{#hero-cat/);
+    assert.doesNotMatch(file.value, /\.rounded/);
+    assert.doesNotMatch(file.value, /\}/);
+  });
+
+  it("removes complex attribute syntax from output", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdComplex = '![Hero](hero.jpg){#main .bleed .rounded width=1920 data-loading="lazy"}';
+    const file = await parser.process(mdComplex);
+
+    // Should have attributes
+    assert.match(file.value, /id="main"/);
+    assert.match(file.value, /class="bleed rounded"/);
+
+    // Should NOT have the raw attribute syntax
+    assert.ok(!file.value.includes('{#main'));
+    assert.ok(!file.value.includes('.bleed'));
+    assert.ok(!file.value.includes('data-loading="lazy"}'));
+  });
 });
 
 describe("Obsidian Image Processing", () => {

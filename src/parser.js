@@ -58,48 +58,67 @@ export const configParser = (
     .use(() => (tree, file) => {
       const source = String(file);
 
-      visit(tree, "image", (node, index, parent) => {
-        // Get the position of this image in the source
-        if (!node.position) return;
+      visit(tree, "paragraph", (paragraph) => {
+        if (!paragraph.children) return;
 
-        const start = node.position.end.offset;
-        const remaining = source.slice(start);
+        for (let i = 0; i < paragraph.children.length; i++) {
+          const node = paragraph.children[i];
 
-        // Check if there's an attribute block right after the image
-        const attrMatch = remaining.match(/^\{([^}]+)\}/);
-        if (!attrMatch) return;
+          if (node.type !== "image" || !node.position) continue;
 
-        const attrString = attrMatch[1];
-        const attrs = {};
-        const classes = [];
+          const start = node.position.end.offset;
+          const remaining = source.slice(start);
 
-        // Parse attributes: #id, .class, key=value, key="value"
-        const attrRegex = /(#[\w-]+)|(\.[\w-]+)|([\w-]+)=(["']?)([^\s"']+)\4/g;
-        let match;
+          // Check if there's an attribute block right after the image
+          const attrMatch = remaining.match(/^\{([^}]+)\}/);
+          if (!attrMatch) continue;
 
-        while ((match = attrRegex.exec(attrString)) !== null) {
-          if (match[1]) {
-            // #id
-            attrs.id = match[1].slice(1);
-          } else if (match[2]) {
-            // .class
-            classes.push(match[2].slice(1));
-          } else if (match[3]) {
-            // key=value
-            const key = match[3];
-            const value = match[5];
-            attrs[key] = value;
+          const attrString = attrMatch[1];
+          const attrs = {};
+          const classes = [];
+
+          // Parse attributes: #id, .class, key=value, key="value with spaces"
+          const attrRegex = /(#[\w-]+)|(\.[\w-]+)|([\w-]+)=(?:"([^"]*)"|'([^']*)'|([\S]+))/g;
+          let match;
+
+          while ((match = attrRegex.exec(attrString)) !== null) {
+            if (match[1]) {
+              // #id
+              attrs.id = match[1].slice(1);
+            } else if (match[2]) {
+              // .class
+              classes.push(match[2].slice(1));
+            } else if (match[3]) {
+              // key=value (match[3] is the key)
+              const key = match[3];
+              // Value can be in match[4] (double quotes), match[5] (single quotes), or match[6] (unquoted)
+              const value = match[4] !== undefined ? match[4] : (match[5] !== undefined ? match[5] : match[6]);
+              attrs[key] = value;
+            }
+          }
+
+          if (classes.length > 0) {
+            attrs.className = classes.join(' ');
+          }
+
+          // Store attributes in data.hProperties for rehype
+          if (!node.data) node.data = {};
+          if (!node.data.hProperties) node.data.hProperties = {};
+          Object.assign(node.data.hProperties, attrs);
+
+          // Remove the attribute block from the next text node if it starts with {
+          const nextNode = paragraph.children[i + 1];
+          if (nextNode && nextNode.type === "text" && nextNode.value) {
+            const textAttrMatch = nextNode.value.match(/^\{[^}]+\}/);
+            if (textAttrMatch) {
+              nextNode.value = nextNode.value.slice(textAttrMatch[0].length);
+              // If the text node is now empty, remove it
+              if (nextNode.value === "") {
+                paragraph.children.splice(i + 1, 1);
+              }
+            }
           }
         }
-
-        if (classes.length > 0) {
-          attrs.className = classes.join(' ');
-        }
-
-        // Store attributes in data.hProperties for rehype
-        if (!node.data) node.data = {};
-        if (!node.data.hProperties) node.data.hProperties = {};
-        Object.assign(node.data.hProperties, attrs);
       });
     })
     // 5. Link normalizer for .md extensions in standard links.
