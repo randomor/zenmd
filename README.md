@@ -48,6 +48,17 @@ zenmd ...
     - That includes table, footnotes, even raw html tags, e.g.: iframe for embeds.
   - Support images in markdown files.
     - Includes Obsidian-style image syntax `![[image-path.png]]` with smart path resolution: searches current directory first, then recursively through subdirectories.
+    - **Image attributes**: Decorate images with custom attributes using `{#id .class key=value}` syntax
+      ```markdown
+      ![Hero Image](hero.jpg){#main-hero .bleed .rounded width=1200 height=600}
+      ![Thumbnail](thumb.png){.center width=150 height=150}
+      ```
+      This allows you to add:
+      - IDs: `{#hero-image}` → `<img id="hero-image">`
+      - Classes: `{.bleed .rounded}` → `<img class="bleed rounded">`
+      - Dimensions: `{width=320 height=240}` → `<img width="320" height="240">`
+      - Data attributes: `{data-loading="lazy"}` → `<img data-loading="lazy">`
+      - Any HTML attributes supported by `<img>` tags
   - Wiki links: `[[Another Page]] => [Another Page](/another-page.html)` by default. Use `--clean-link` (`-c`) to skip the `.html` suffix.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
   - Table of contents generation when a `## Table of contents` or `## Contents` section is present.

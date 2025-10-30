@@ -100,6 +100,260 @@ describe("configParser", () => {
     const file = await parser.process(md);
     assert.match(file.value, /href=\"#section\"/);
   });
+
+  it("parses image attributes with id, class, width, and height", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithAttrs = "![Cat](cat.png){#hero-cat .rounded width=320 height=240}";
+    const file = await parser.process(mdWithAttrs);
+
+    // Check that all attributes are present
+    assert.match(file.value, /id="hero-cat"/);
+    assert.match(file.value, /class="rounded"/);
+    assert.match(file.value, /width="320"/);
+    assert.match(file.value, /height="240"/);
+  });
+
+  it("parses image attributes with multiple classes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithMultipleClasses = "![Hero](hero.jpg){.bleed .rounded .shadow}";
+    const file = await parser.process(mdWithMultipleClasses);
+
+    // Check that all classes are present
+    assert.match(file.value, /class="bleed rounded shadow"/);
+  });
+
+  it("parses image attributes with only id", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithId = "![Logo](logo.svg){#company-logo}";
+    const file = await parser.process(mdWithId);
+
+    assert.match(file.value, /id="company-logo"/);
+  });
+
+  it("parses image attributes with only classes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithClasses = "![Banner](banner.jpg){.full-width .center}";
+    const file = await parser.process(mdWithClasses);
+
+    assert.match(file.value, /class="full-width center"/);
+  });
+
+  it("parses image attributes with only dimensions", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithDimensions = "![Thumbnail](thumb.png){width=150 height=150}";
+    const file = await parser.process(mdWithDimensions);
+
+    assert.match(file.value, /width="150"/);
+    assert.match(file.value, /height="150"/);
+  });
+
+  it("parses image attributes with data attributes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithDataAttrs = "![Photo](photo.jpg){data-src=\"lazy.jpg\" data-loading=\"lazy\"}";
+    const file = await parser.process(mdWithDataAttrs);
+
+    assert.match(file.value, /data-src="lazy.jpg"/);
+    assert.match(file.value, /data-loading="lazy"/);
+  });
+
+  it("handles images without attributes normally", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const normalMd = "![Normal](normal.jpg)";
+    const file = await parser.process(normalMd);
+
+    // Should still render normally without extra attributes
+    assert.match(file.value, /src="\.\/normal\.jpg"/);
+    assert.match(file.value, /alt="Normal"/);
+  });
+
+  it("parses attributes with quoted values", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithQuotedAttrs = '![Image](img.png){title="A beautiful image" alt="Custom alt"}';
+    const file = await parser.process(mdWithQuotedAttrs);
+
+    assert.match(file.value, /title="A beautiful image"/);
+    assert.match(file.value, /alt="Custom alt"/);
+  });
+
+  it("parses attributes with hyphens in names", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithHyphens = "![Image](img.png){data-scroll-speed=\"0.5\" aria-label=\"Hero image\"}";
+    const file = await parser.process(mdWithHyphens);
+
+    assert.match(file.value, /data-scroll-speed="0.5"/);
+    assert.match(file.value, /aria-label="Hero image"/);
+  });
+
+  it("parses complex mixed attributes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdComplex = '![Hero](hero.png){#main-hero .bleed .rounded .shadow width=1920 height=1080 data-loading="lazy" loading="lazy"}';
+    const file = await parser.process(mdComplex);
+
+    assert.match(file.value, /id="main-hero"/);
+    assert.match(file.value, /class="bleed rounded shadow"/);
+    assert.match(file.value, /width="1920"/);
+    assert.match(file.value, /height="1080"/);
+    assert.match(file.value, /data-loading="lazy"/);
+    assert.match(file.value, /loading="lazy"/);
+  });
+
+  it("preserves alt text when using attributes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithAlt = "![A cat sitting on a windowsill](cat.jpg){.rounded width=400}";
+    const file = await parser.process(mdWithAlt);
+
+    assert.match(file.value, /alt="A cat sitting on a windowsill"/);
+    assert.match(file.value, /class="rounded"/);
+    assert.match(file.value, /width="400"/);
+  });
+
+  it("handles attributes with empty alt text", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdEmptyAlt = "![](decorative.svg){.icon width=24 height=24}";
+    const file = await parser.process(mdEmptyAlt);
+
+    assert.match(file.value, /alt=""/);
+    assert.match(file.value, /class="icon"/);
+    assert.match(file.value, /width="24"/);
+    assert.match(file.value, /height="24"/);
+  });
+
+  it("handles multiple images with different attributes in same document", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdMultiple = `
+![First](first.jpg){#img1 .left width=300}
+Some text between images
+![Second](second.jpg){#img2 .right width=400}
+![Third](third.jpg){.center}
+`;
+    const file = await parser.process(mdMultiple);
+
+    // Check first image
+    assert.match(file.value, /id="img1"/);
+    assert.match(file.value, /class="left"/);
+    assert.match(file.value, /width="300"/);
+
+    // Check second image
+    assert.match(file.value, /id="img2"/);
+    assert.match(file.value, /class="right"/);
+    assert.match(file.value, /width="400"/);
+
+    // Check third image
+    assert.match(file.value, /class="center"/);
+  });
+
+  it("handles attributes without spaces between them", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdNoSpaces = "![Image](img.png){#hero.bleed.rounded width=500}";
+    const file = await parser.process(mdNoSpaces);
+
+    assert.match(file.value, /id="hero"/);
+    assert.match(file.value, /class="bleed rounded"/);
+    assert.match(file.value, /width="500"/);
+  });
+
+  it("handles numeric values without quotes", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdNumeric = "![Image](img.png){width=800 height=600 tabindex=0}";
+    const file = await parser.process(mdNumeric);
+
+    assert.match(file.value, /width="800"/);
+    assert.match(file.value, /height="600"/);
+    assert.match(file.value, /tabindex="0"/);
+  });
+
+  it("integrates attributes with full markdown parsing", async () => {
+    const inputFile = "./src/__test__/example.md";
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === inputFile) {
+        return `# Test Document
+
+![Hero Image](hero.jpg){#hero .bleed width=1200 height=600}
+
+Some content here.
+
+![Thumbnail](thumb.png){.center width=200}`;
+      }
+      return "";
+    });
+
+    const pageAttributes = await parseMarkdown(
+      inputFile,
+      inputFolder,
+      outputFolder
+    );
+
+    assert.ok(pageAttributes.content.includes('id="hero"'));
+    assert.ok(pageAttributes.content.includes('class="bleed"'));
+    assert.ok(pageAttributes.content.includes('width="1200"'));
+    assert.ok(pageAttributes.content.includes('class="center"'));
+    assert.ok(pageAttributes.content.includes('width="200"'));
+  });
+
+  it("removes attribute syntax from output HTML", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdWithAttrs = "![Cat](cat.png){#hero-cat .rounded width=320}";
+    const file = await parser.process(mdWithAttrs);
+
+    // Should have the attributes applied
+    assert.match(file.value, /id="hero-cat"/);
+    assert.match(file.value, /class="rounded"/);
+    assert.match(file.value, /width="320"/);
+
+    // Should NOT have the curly brace syntax in the output
+    assert.doesNotMatch(file.value, /\{#hero-cat/);
+    assert.doesNotMatch(file.value, /\.rounded/);
+    assert.doesNotMatch(file.value, /\}/);
+  });
+
+  it("removes complex attribute syntax from output", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const parser = configParser(sourceFile, inputFolder, outputFolder);
+
+    const mdComplex = '![Hero](hero.jpg){#main .bleed .rounded width=1920 data-loading="lazy"}';
+    const file = await parser.process(mdComplex);
+
+    // Should have attributes
+    assert.match(file.value, /id="main"/);
+    assert.match(file.value, /class="bleed rounded"/);
+
+    // Should NOT have the raw attribute syntax
+    assert.ok(!file.value.includes('{#main'));
+    assert.ok(!file.value.includes('.bleed'));
+    assert.ok(!file.value.includes('data-loading="lazy"}'));
+  });
 });
 
 describe("Obsidian Image Processing", () => {
@@ -279,6 +533,45 @@ describe("Obsidian Image Processing", () => {
 
     const copyFileCalls = fsPromises.copyFile.mock.calls;
     assert.ok(copyFileCalls.length >= 1, "File copy not triggered");
+  });
+
+  it("handles standard markdown images with attributes after Obsidian processing", async () => {
+    const mockInputFile = "./src/__test__/obsidian-attr-test.md";
+
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === mockInputFile) {
+        // After Obsidian preprocessing, ![[image.jpg]] becomes ![](./image.jpg)
+        // Then we can add attributes to the standard markdown syntax
+        return "![Hero](./hero.jpg){.bleed width=1200}";
+      }
+      return "";
+    });
+
+    mock.method(fsPromises, "stat", async (filePath) => {
+      if (filePath.includes("hero.jpg")) {
+        return { isFile: () => true };
+      }
+      const error = new Error(
+        `ENOENT: no such file or directory, stat '${filePath}'`
+      );
+      error.code = "ENOENT";
+      throw error;
+    });
+
+    const result = await parseMarkdown(
+      mockInputFile,
+      path.dirname(mockInputFile),
+      "./dist"
+    );
+
+    assert.ok(
+      result.content.includes('class="bleed"'),
+      "Bleed class not found"
+    );
+    assert.ok(
+      result.content.includes('width="1200"'),
+      "Width attribute not found"
+    );
   });
 });
 
