@@ -1,7 +1,5 @@
 # ZenMD
 
-_Beta software: expect bugs and breaking changes..._
-
 Package released on npm: https://www.npmjs.com/package/zenmd
 
 ## Tagline
