@@ -8,7 +8,7 @@ export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') =
   const {
     title,
     description,
-    frontMatter,
+    frontMatter = {},
     content,
     inputFile,
     inputFolder,
@@ -22,6 +22,7 @@ export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') =
     title,
     description,
     content,
+    favicon: pageAttributes.favicon || frontMatter?.favicon,
   });
 
   try {

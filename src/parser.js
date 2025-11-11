@@ -277,7 +277,13 @@ export const parseMarkdown = async (
       options
     );
     const file = await processor.process(data);
-    const frontMatter = file.data.frontmatter || {};
+    const fileFrontMatter = file.data.frontmatter || {};
+    const globalFrontMatter =
+      (options && options.globalFrontMatter) || {};
+    const frontMatter = {
+      ...globalFrontMatter,
+      ...fileFrontMatter,
+    };
 
     // match front matter with tags and return if not match
     const tags = options.tags || [];
@@ -305,8 +311,8 @@ export const parseMarkdown = async (
     const title = file.data.meta?.title || frontMatter.title || inputFileName;
     const description = frontMatter.description || `A page about ${title}`;
 
-    if (Object.keys(frontMatter).length > 0) {
-      console.log(chalk.blueBright("Front Matter:"), frontMatter);
+    if (Object.keys(fileFrontMatter).length > 0) {
+      console.log(chalk.blueBright("Front Matter:"), fileFrontMatter);
     }
 
     try {

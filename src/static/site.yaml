@@ -1,0 +1,10 @@
+# Configure global values for your ZenMD site.
+#
+# All keys under `front_matter` behave exactly like front matter inside
+# individual Markdown files. Page-level front matter takes precedence over
+# these defaults.
+#
+# front_matter:
+#   title: "My Awesome Site"
+#   description: "A short description that appears in meta tags."
+#   favicon: "/favicon.png"

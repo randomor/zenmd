@@ -616,6 +616,25 @@ describe("parseMarkdown", () => {
     );
   });
 
+  it("includes global front matter values", async () => {
+    const inputFile = "./src/__test__/example.md";
+    mock.method(fsPromises, "readFile", async (filePath) => {
+      if (filePath === inputFile) return "# Title\nDescription";
+      if (filePath.endsWith("layout.html")) return "<html>{{{content}}}</html>";
+      return "";
+    });
+
+    const pageAttributes = await parseMarkdown(
+      inputFile,
+      inputFolder,
+      outputFolder,
+      { globalFrontMatter: { description: "From site" } }
+    );
+
+    assert.strictEqual(pageAttributes.frontMatter.description, "From site");
+    assert.strictEqual(pageAttributes.description, "From site");
+  });
+
   describe("tags filtering", () => {
     it("handles tag-based file filtering", async () => {
       const sourceFile = "./src/__test__/example.md";

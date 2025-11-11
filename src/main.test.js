@@ -134,6 +134,108 @@ describe("processFolder", () => {
     const content = await fs.readFile(robotsPath, "utf-8");
     assert.ok(content.includes("User-agent: *\nDisallow:"));
   });
+
+  it("copies favicon from input root when no favicon is defined", async () => {
+    const { processFolder } = await import("./main.js");
+    const tempInput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-favicon-root-")
+    );
+    const tempOutput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-favicon-output-")
+    );
+
+    try {
+      const markdownPath = path.join(tempInput, "index.md");
+      await fs.writeFile(markdownPath, "# Hello\n\nContent");
+      const faviconPath = path.join(tempInput, "favicon.svg");
+      await fs.writeFile(faviconPath, "<svg xmlns='http://www.w3.org/2000/svg'></svg>");
+
+      await processFolder(tempInput, tempOutput);
+
+      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
+      assert.ok(html.includes('<link rel="icon" href="/favicon.svg">'));
+
+      const copiedExists = await fs
+        .access(path.join(tempOutput, "favicon.svg"))
+        .then(() => true)
+        .catch(() => false);
+      assert.ok(copiedExists);
+    } finally {
+      await fs.rm(tempInput, { recursive: true, force: true });
+      await fs.rm(tempOutput, { recursive: true, force: true });
+    }
+  });
+
+  it("uses built-in favicon and baseUrl when none is provided", async () => {
+    const { processFolder } = await import("./main.js");
+    const tempInput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-favicon-builtin-")
+    );
+    const tempOutput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-favicon-out-")
+    );
+
+    try {
+      await fs.writeFile(path.join(tempInput, "index.md"), "# Title\n\nBody");
+
+      await processFolder(tempInput, tempOutput, {
+        baseUrl: "https://example.com/docs",
+      });
+
+      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
+      assert.ok(
+        html.includes(
+          '<link rel="icon" href="https://example.com/docs/favicon.png">'
+        )
+      );
+
+      const copiedExists = await fs
+        .access(path.join(tempOutput, "favicon.png"))
+        .then(() => true)
+        .catch(() => false);
+      assert.ok(copiedExists);
+    } finally {
+      await fs.rm(tempInput, { recursive: true, force: true });
+      await fs.rm(tempOutput, { recursive: true, force: true });
+    }
+  });
+
+  it("merges front matter from site.yaml", async () => {
+    const { processFolder } = await import("./main.js");
+    const tempInput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-site-config-")
+    );
+    const tempOutput = await fs.mkdtemp(
+      path.join(process.cwd(), "zenmd-site-output-")
+    );
+
+    try {
+      await fs.writeFile(path.join(tempInput, "index.md"), "# Title\n\nBody");
+      await fs.writeFile(
+        path.join(tempInput, "site.yaml"),
+        "front_matter:\n  description: Global description\n  favicon: /branding/icon.ico\n"
+      );
+
+      await processFolder(tempInput, tempOutput, {
+        baseUrl: "https://example.com",
+      });
+
+      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
+      assert.ok(
+        html.includes(
+          '<meta name="description" content="Global description">'
+        )
+      );
+      assert.ok(
+        html.includes(
+          '<link rel="icon" href="https://example.com/branding/icon.ico">'
+        )
+      );
+    } finally {
+      await fs.rm(tempInput, { recursive: true, force: true });
+      await fs.rm(tempOutput, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("processFolder - Sitemap", () => {

@@ -55,6 +55,25 @@ describe("renderHtmlPage", () => {
 
     assert(fileExists);
   });
+
+  it("renders favicon link when provided", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const pageAttributes = {
+      title: "Example",
+      content: "Hello World",
+      inputFile: sourceFile,
+      inputFolder,
+      outputFileFolder: outputFolder,
+      outputFileName: "example.html",
+      outputFilePath: "dist/example.html",
+      frontMatter: { description: "Desc", favicon: "/favicon.ico" },
+      favicon: "/favicon.ico",
+    };
+
+    await renderHtmlPage(pageAttributes);
+    const fileContent = await fs.readFile(pageAttributes.outputFilePath, "utf-8");
+    assert.ok(fileContent.includes('<link rel="icon" href="/favicon.ico">'));
+  });
 });
 
 describe("renderSitemap", () => {
