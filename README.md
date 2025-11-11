@@ -74,8 +74,11 @@ zenmd ...
 - Automatically generates `robots.txt`
 - Auto-discovers favicons from your content folder, copying `favicon.*` to the
   output (with a built-in fallback when none is provided).
+- **Open Graph (OG) meta tags** for rich social media previews:
+  - Automatically includes `og:image`, `og:url`, `og:title`, `og:description`, and `og:type`
+  - Smart OG image resolution with multiple fallbacks (see below)
 
-## Global configuration & favicons
+## Global configuration, favicons & OG images
 
 - **Global defaults with `site.yaml`**: Place an optional `site.yaml` beside
   your Markdown files. Keys under `front_matter` behave like page-level front
@@ -90,13 +93,28 @@ zenmd ...
 
   When a `baseUrl` is supplied, ZenMD prefixes the resolved favicon path so
   templates can reference it with `{{favicon}}`.
+- **OG image resolution order** (for social media sharing):
+  1. Page-level `og_image` value from frontmatter (highest priority).
+  2. First image found in the article content (automatically extracted).
+  3. Site-level `og_image` from `site.yaml` front_matter.
+  4. Built-in fallback (`og_image.png`).
+
+  **URL handling**:
+  - Absolute URLs (e.g., `https://example.com/image.png`) are used as-is in the
+    template.
+  - Relative URLs (e.g., `/images/hero.png` or `og_image.png`) are copied to
+    the output folder and prefixed with `baseUrl` for the OG meta tag.
+  - Images from article content are already copied during markdown processing
+    and reused for OG tags.
+
+  The `og:url` meta tag is automatically generated using `baseUrl` plus the page's
+  relative path (without the `.html` extension for cleaner URLs).
 
 ## Gaps
 
 Here is a list of known gaps:
 
 - The generated site doesn't have a RSS feed.
-- The generated site doesn't have default OG metatags, unless you override the default layout.
 
 Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
 

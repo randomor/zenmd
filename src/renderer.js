@@ -23,6 +23,8 @@ export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') =
     description,
     content,
     favicon: pageAttributes.favicon || frontMatter?.favicon,
+    og_image: pageAttributes.og_image || frontMatter?.og_image,
+    og_url: pageAttributes.og_url || frontMatter?.og_url,
   });
 
   try {
