@@ -1,7 +1,5 @@
 # ZenMD
 
-_Beta software: expect bugs and breaking changes..._
-
 Package released on npm: https://www.npmjs.com/package/zenmd
 
 ## Tagline
@@ -68,10 +66,30 @@ zenmd ...
   - Support layout ejection, so you can customize the layout: `zenmd eject --layout <default|matrix|cyberpunk>`. This will create a `layout.html` in _current directory_.
 - Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
+- Optional `site.yaml` lets you define global front matter defaults (e.g. title,
+  description, favicon) that individual pages can override.
 - Generates `sitemap.xml` at the output directory.
   - Requires `baseUrl` option or `BASE_URL` env var, since `sitemap.xml` requires full URL.
   - If missing base url, no sitemap will be generated.
 - Automatically generates `robots.txt`
+- Auto-discovers favicons from your content folder, copying `favicon.*` to the
+  output (with a built-in fallback when none is provided).
+
+## Global configuration & favicons
+
+- **Global defaults with `site.yaml`**: Place an optional `site.yaml` beside
+  your Markdown files. Keys under `front_matter` behave like page-level front
+  matter and are merged into every document (page front matter still wins). Run
+  `zenmd eject` to scaffold both a layout and an example `site.yaml`.
+- **Favicon resolution order**:
+  1. Page/front matter `favicon` value (merged from `site.yaml` or the Markdown
+     file).
+  2. `favicon.*` in the input folder root.
+  3. `favicon.*` inside `input/assets/`.
+  4. Built-in fallback (`favicon.png`).
+
+  When a `baseUrl` is supplied, ZenMD prefixes the resolved favicon path so
+  templates can reference it with `{{favicon}}`.
 
 ## Gaps
 

@@ -51,6 +51,20 @@ export const ejectLayout = async (layoutType) => {
     console.log(
       chalk.blue(`You can now customize the layout at: ${targetPath}`)
     );
+
+    const siteConfigSource = path.join(__dirname, "static", "site.yaml");
+    const siteConfigTarget = path.join(process.cwd(), "site.yaml");
+
+    if (!(await fileExists(siteConfigTarget))) {
+      await fs.copyFile(siteConfigSource, siteConfigTarget);
+      console.log(chalk.green("Created site.yaml with helpful defaults."));
+    } else {
+      console.log(
+        chalk.yellow(
+          "Skipped creating site.yaml because one already exists in this directory."
+        )
+      );
+    }
   } catch (error) {
     console.error(chalk.red(`Error ejecting layout: ${error.message}`));
     process.exit(1);

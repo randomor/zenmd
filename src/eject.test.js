@@ -69,6 +69,12 @@ describe("eject.js functions", () => {
           log.includes("Successfully ejected")
         );
         assert.strictEqual(successMessage !== undefined, true);
+
+        const siteConfigPath = path.join(tempDir, "site.yaml");
+        const siteConfigExists = await fileExists(siteConfigPath);
+        assert.strictEqual(siteConfigExists, true);
+        const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
+        assert.ok(siteConfigContent.includes("front_matter"));
       } finally {
         process.chdir(originalCwd);
         await fs.rm(tempDir, { recursive: true, force: true });
@@ -172,6 +178,31 @@ describe("eject.js functions", () => {
         // Verify the file detection logic works
         const content = await fs.readFile(layoutPath, "utf8");
         assert.strictEqual(content, "existing content");
+      } finally {
+        process.chdir(originalCwd);
+        await fs.rm(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it("does not overwrite existing site.yaml", async () => {
+      const tempDir = await fs.mkdtemp(
+        path.join(__dirname, "test-eject-site-config-")
+      );
+      const originalCwd = process.cwd();
+
+      try {
+        process.chdir(tempDir);
+        const siteConfigPath = path.join(tempDir, "site.yaml");
+        await fs.writeFile(siteConfigPath, "front_matter:\n  title: Existing\n");
+
+        await ejectLayout("default");
+
+        const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
+        assert.strictEqual(siteConfigContent.includes("Existing"), true);
+        const skippedMessage = consoleLogs.find((log) =>
+          log.includes("Skipped creating site.yaml")
+        );
+        assert.notStrictEqual(skippedMessage, undefined);
       } finally {
         process.chdir(originalCwd);
         await fs.rm(tempDir, { recursive: true, force: true });

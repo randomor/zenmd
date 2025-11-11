@@ -8,7 +8,7 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.0.25",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/randomor/zenmd.git"
@@ -44,6 +44,7 @@
     "remark-wiki-link": "^2.0.1",
     "unified": "^11.0.4",
     "unist-util-visit": "^5.0.0",
+    "yaml": "^2.8.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
