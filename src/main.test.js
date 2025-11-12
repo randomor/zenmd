@@ -2,11 +2,12 @@ import fs from "fs/promises";
 import { describe, it, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import path from "path";
+import os from "os";
 
 describe("processFolder", () => {
   const inputFolder = "./src/__test__";
   const fixturesRoot = path.join(inputFolder, "fixtures");
-  const outputFolder = "./dist";
+  let outputFolder;
   const allMarkdownFiles = [
     "src/__test__/example.md",
     "src/__test__/second level/nested.md",
@@ -15,13 +16,15 @@ describe("processFolder", () => {
     "src/__test__/fixtures/favicon-root/index.md",
     "src/__test__/fixtures/site-config/index.md",
   ];
-  beforeEach(
-    async () => await fs.rm(outputFolder, { recursive: true, force: true })
-  );
-  afterEach(
-    async () =>
-      await fs.rm(path.join(outputFolder, "robots.txt"), { force: true })
-  );
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-test-"));
+  });
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
 
   it("picks markdown and convert", async () => {
     const { processFolder } = await import("./main.js");
@@ -33,7 +36,7 @@ describe("processFolder", () => {
       inputFolder,
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
 
     await processFolder(inputFolder, outputFolder, { parser });
@@ -54,7 +57,7 @@ describe("processFolder", () => {
       inputFolder: "src/__test__/second level",
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
     await processFolder(inputArg, outputFolder, { parser });
 
@@ -73,7 +76,7 @@ describe("processFolder", () => {
       inputFolder: "src/__test__",
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
     const tags = [
       ["tag1", "value1"],
@@ -304,10 +307,18 @@ describe("processFolder", () => {
 
 describe("processFolder - Sitemap", () => {
   const inputFolder = "./src/__test__";
-  const outputFolder = "./dist";
-  beforeEach(
-    async () => await fs.rm(outputFolder, { recursive: true, force: true })
-  );
+  let outputFolder;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-test-"));
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
 
   it("calls renderSitemap with correct arguments when sitemap is true and baseUrl is provided", async () => {
     const { processFolder } = await import("./main.js");

@@ -1,18 +1,28 @@
 import fs from "fs/promises";
 import assert from "node:assert";
-import { describe, it, beforeEach } from "node:test";
+import path from "path";
+import os from "os";
+import { describe, it, beforeEach, afterEach } from "node:test";
 import { renderHtmlPage, renderSitemap } from "./renderer.js";
 
 const inputFolder = "./src/__test__";
-const outputFolder = "./dist";
-
 describe("renderHtmlPage", () => {
-  beforeEach(
-    async () => await fs.rm("./dist", { recursive: true, force: true })
-  );
+  let outputFolder;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-render-page-"));
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
 
   it("renders layout", async () => {
     const sourceFile = "./src/__test__/example.md";
+    const outputFilePath = path.join(outputFolder, "example.html");
     const pageAttributes = {
       title: "Example",
       content: "Hello World",
@@ -20,12 +30,12 @@ describe("renderHtmlPage", () => {
       inputFolder,
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath,
     };
     await renderHtmlPage(pageAttributes);
 
     const fileContent = await fs.readFile(
-      pageAttributes.outputFilePath,
+      outputFilePath,
       "utf-8"
     );
     const renderedWithLayout = fileContent.includes("layout from root");
@@ -36,8 +46,8 @@ describe("renderHtmlPage", () => {
 
   it("converts second level file to html with right path", async () => {
     const sourceFile = "./src/__test__/second level/nested.md";
-    const resultFile = "./dist/second-level/nested.html";
-    const outputFileFolder = "./dist/second-level";
+    const outputFileFolder = path.join(outputFolder, "second-level");
+    const resultFile = path.join(outputFileFolder, "nested.html");
     const pageAttributes = {
       title: "Nested",
       content: "Hello World",
@@ -58,6 +68,7 @@ describe("renderHtmlPage", () => {
 
   it("renders favicon link when provided", async () => {
     const sourceFile = "./src/__test__/example.md";
+    const outputFilePath = path.join(outputFolder, "example.html");
     const pageAttributes = {
       title: "Example",
       content: "Hello World",
@@ -65,18 +76,19 @@ describe("renderHtmlPage", () => {
       inputFolder,
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath,
       frontMatter: { description: "Desc", favicon: "/favicon.ico" },
       favicon: "/favicon.ico",
     };
 
     await renderHtmlPage(pageAttributes);
-    const fileContent = await fs.readFile(pageAttributes.outputFilePath, "utf-8");
+    const fileContent = await fs.readFile(outputFilePath, "utf-8");
     assert.ok(fileContent.includes('<link rel="icon" href="/favicon.ico">'));
   });
 
   it("renders og:image and og:url meta tags when provided", async () => {
     const sourceFile = "./src/__test__/example.md";
+    const outputFilePath = path.join(outputFolder, "example.html");
     const pageAttributes = {
       title: "Example",
       content: "Hello World",
@@ -84,7 +96,7 @@ describe("renderHtmlPage", () => {
       inputFolder,
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath,
       frontMatter: {
         ogImage: "https://example.com/og.png",
         ogUrl: "https://example.com/example",
@@ -92,7 +104,7 @@ describe("renderHtmlPage", () => {
     };
 
     await renderHtmlPage(pageAttributes);
-    const fileContent = await fs.readFile(pageAttributes.outputFilePath, "utf-8");
+    const fileContent = await fs.readFile(outputFilePath, "utf-8");
     assert.ok(
       fileContent.includes('<meta property="og:image" content="https://example.com/og.png">'),
       "Should render og:image"
@@ -105,26 +117,36 @@ describe("renderHtmlPage", () => {
 });
 
 describe("renderSitemap", () => {
-  const sitemapPath = "./dist/sitemap.xml";
   const baseUrl = "https://example.com";
-  const pageAttributesList = [
-    {
-      outputFileFolder: "./dist",
-      outputFilePath: "dist/example.html",
-    },
-    {
-      outputFileFolder: "./dist/second-level",
-      outputFilePath: "dist/second-level/nested.html",
-    },
-    {
-      outputFileFolder: "./dist/second-level",
-      outputFilePath: "dist/second-level/index.html",
-    },
-  ];
+  let outputFolder;
+  let sitemapPath;
+  let pageAttributesList;
 
   beforeEach(async () => {
-    await fs.rm("./dist", { recursive: true, force: true });
-    await fs.mkdir("./dist/second-level", { recursive: true });
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-render-sitemap-"));
+    sitemapPath = path.join(outputFolder, "sitemap.xml");
+    await fs.mkdir(path.join(outputFolder, "second-level"), { recursive: true });
+    pageAttributesList = [
+      {
+        outputFileFolder: outputFolder,
+        outputFilePath: path.join(outputFolder, "example.html"),
+      },
+      {
+        outputFileFolder: path.join(outputFolder, "second-level"),
+        outputFilePath: path.join(outputFolder, "second-level", "nested.html"),
+      },
+      {
+        outputFileFolder: path.join(outputFolder, "second-level"),
+        outputFilePath: path.join(outputFolder, "second-level", "index.html"),
+      },
+    ];
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
   });
 
   it("creates a sitemap.xml with correct URLs", async () => {
