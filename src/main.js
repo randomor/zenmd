@@ -127,6 +127,19 @@ const stripLeadingDotSlash = (value) => {
   return normalized;
 };
 
+const toPosixPath = (value) => value.replace(/\\/g, "/");
+
+const buildPublicPathFromOutput = (outputFolder, absolutePath) => {
+  const relativePath = path.relative(outputFolder, absolutePath);
+  const normalized = toPosixPath(relativePath);
+
+  if (!normalized || normalized === ".") {
+    return "/";
+  }
+
+  return normalized.startsWith("/") ? normalized : `/${normalized}`;
+};
+
 const resolveFaviconUrl = (faviconValue, baseUrl, fallbackPublicPath) => {
   if (faviconValue) {
     if (isAbsoluteUrl(faviconValue)) {
@@ -176,7 +189,8 @@ const resolveOgImageForPage = async (
   pageAttributes,
   siteFrontMatter,
   baseUrl,
-  fallbackOgImage
+  fallbackOgImage,
+  outputFolder
 ) => {
   const {
     pageFrontMatter,
@@ -206,11 +220,12 @@ const resolveOgImageForPage = async (
         outputFileFolder,
         ogImageValue
       );
-      
+
       if (baseUrl) {
-        const urlPath = copied.relativePath.startsWith("/") 
-          ? copied.relativePath 
-          : `/${copied.relativePath}`;
+        const urlPath = buildPublicPathFromOutput(
+          outputFolder,
+          copied.outputPath
+        );
         return joinUrl(baseUrl, urlPath);
       }
       return `./${copied.relativePath}`;
@@ -225,13 +240,19 @@ const resolveOgImageForPage = async (
 
   // 2. Check first image from markdown content
   if (firstImageRelative) {
-    const normalizedFirstImageRelative =
-      stripLeadingDotSlash(firstImageRelative);
+    const normalizedFirstImageRelative = toPosixPath(
+      stripLeadingDotSlash(firstImageRelative)
+    );
 
     if (baseUrl) {
-      const urlPath = normalizedFirstImageRelative.startsWith("/")
-        ? normalizedFirstImageRelative
-        : `/${normalizedFirstImageRelative}`;
+      const absoluteFirstImagePath = path.join(
+        outputFileFolder,
+        normalizedFirstImageRelative
+      );
+      const urlPath = buildPublicPathFromOutput(
+        outputFolder,
+        absoluteFirstImagePath
+      );
       return joinUrl(baseUrl, urlPath);
     }
     return `./${normalizedFirstImageRelative}`;
@@ -258,11 +279,12 @@ const resolveOgImageForPage = async (
         outputFileFolder,
         ogImageValue
       );
-      
+
       if (baseUrl) {
-        const urlPath = copied.relativePath.startsWith("/") 
-          ? copied.relativePath 
-          : `/${copied.relativePath}`;
+        const urlPath = buildPublicPathFromOutput(
+          outputFolder,
+          copied.outputPath
+        );
         return joinUrl(baseUrl, urlPath);
       }
       return `./${copied.relativePath}`;
@@ -367,7 +389,8 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
         attributes,
         siteFrontMatter,
         baseUrl,
-        fallbackOgImage
+        fallbackOgImage,
+        outputFolder
       )
     );
     const resolvedOgImages = await Promise.all(ogImagePromises);
