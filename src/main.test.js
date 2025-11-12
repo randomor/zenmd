@@ -268,6 +268,25 @@ describe("processFolder", () => {
     }
   });
 
+  it("nests ogImage URLs for first-content image on nested pages", async () => {
+    const { processFolder } = await import("./main.js");
+
+    await processFolder(inputFolder, outputFolder, {
+      baseUrl: "https://example.com/docs/child/",
+    });
+
+    const nestedHtml = await fs.readFile(
+      path.join(outputFolder, "second-level/nested.html"),
+      "utf-8"
+    );
+    const expectedMeta =
+      '<meta property="og:image" content="https://example.com/docs/child/second-level/assets/testImage.webp">';
+    assert.ok(
+      nestedHtml.includes(expectedMeta),
+      "Should include nested path in og:image"
+    );
+  });
+
   it("generates ogUrl with baseUrl and handles subdirectory paths", async () => {
     const { processFolder } = await import("./main.js");
 
