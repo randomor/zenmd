@@ -74,6 +74,34 @@ describe("renderHtmlPage", () => {
     const fileContent = await fs.readFile(pageAttributes.outputFilePath, "utf-8");
     assert.ok(fileContent.includes('<link rel="icon" href="/favicon.ico">'));
   });
+
+  it("renders og:image and og:url meta tags when provided", async () => {
+    const sourceFile = "./src/__test__/example.md";
+    const pageAttributes = {
+      title: "Example",
+      content: "Hello World",
+      inputFile: sourceFile,
+      inputFolder,
+      outputFileFolder: outputFolder,
+      outputFileName: "example.html",
+      outputFilePath: "dist/example.html",
+      frontMatter: {
+        ogImage: "https://example.com/og.png",
+        ogUrl: "https://example.com/example",
+      },
+    };
+
+    await renderHtmlPage(pageAttributes);
+    const fileContent = await fs.readFile(pageAttributes.outputFilePath, "utf-8");
+    assert.ok(
+      fileContent.includes('<meta property="og:image" content="https://example.com/og.png">'),
+      "Should render og:image"
+    );
+    assert.ok(
+      fileContent.includes('<meta property="og:url" content="https://example.com/example">'),
+      "Should render og:url"
+    );
+  });
 });
 
 describe("renderSitemap", () => {

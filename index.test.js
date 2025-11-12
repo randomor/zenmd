@@ -7,6 +7,9 @@ import { spawn } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = __dirname;
+const ORIGINAL_CWD = process.cwd();
+let cliCwd = PROJECT_ROOT;
 
 // Helper to dynamically import functions without running yargs
 const importIndexFunctions = async () => {
@@ -19,8 +22,9 @@ const importIndexFunctions = async () => {
 // Helper to run CLI as child process and capture output
 const runCLI = (args = [], input = "") => {
   return new Promise((resolve, reject) => {
-    const child = spawn("node", ["index.js", ...args], {
-      cwd: __dirname,
+    const scriptPath = path.join(PROJECT_ROOT, "index.js");
+    const child = spawn("node", [scriptPath, ...args], {
+      cwd: cliCwd ?? PROJECT_ROOT,
       stdio: ["pipe", "pipe", "pipe"],
     });
 
@@ -65,6 +69,9 @@ describe("index.js CLI Functions", () => {
   let consoleErrors;
 
   beforeEach(async () => {
+    cliCwd = await fs.mkdtemp(path.join(PROJECT_ROOT, "cli-test-"));
+    process.chdir(cliCwd);
+
     // Clean up dist folder before each test to prevent prompts
     try {
       await fs.rm("./dist", { recursive: true, force: true });
@@ -136,6 +143,12 @@ describe("index.js CLI Functions", () => {
       await fs.rm("./layout.html", { force: true });
     } catch (error) {
       // Ignore if file doesn't exist
+    }
+
+    process.chdir(ORIGINAL_CWD);
+    if (cliCwd) {
+      await fs.rm(cliCwd, { recursive: true, force: true });
+      cliCwd = undefined;
     }
   });
 

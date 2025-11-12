@@ -603,7 +603,8 @@ describe("parseMarkdown", () => {
 
     assert.strictEqual(pageAttributes.title, "Title");
     assert.ok(pageAttributes.content);
-    assert.deepStrictEqual(pageAttributes.frontMatter, {});
+    assert.strictEqual(pageAttributes.frontMatter, undefined);
+    assert.deepStrictEqual(pageAttributes.pageFrontMatter, {});
     assert.strictEqual(pageAttributes.inputFile, inputFile);
     assert.strictEqual(
       pageAttributes.outputFileFolder,
@@ -616,7 +617,7 @@ describe("parseMarkdown", () => {
     );
   });
 
-  it("includes global front matter values", async () => {
+  it("does not merge site front matter into page front matter", async () => {
     const inputFile = "./src/__test__/example.md";
     mock.method(fsPromises, "readFile", async (filePath) => {
       if (filePath === inputFile) return "# Title\nDescription";
@@ -628,11 +629,14 @@ describe("parseMarkdown", () => {
       inputFile,
       inputFolder,
       outputFolder,
-      { globalFrontMatter: { description: "From site" } }
+      { siteFrontMatter: { description: "From site" } }
     );
 
-    assert.strictEqual(pageAttributes.frontMatter.description, "From site");
-    assert.strictEqual(pageAttributes.description, "From site");
+    assert.strictEqual(pageAttributes.pageFrontMatter.description, undefined);
+    assert.strictEqual(
+      pageAttributes.description,
+      "A page about Title"
+    );
   });
 
   describe("tags filtering", () => {

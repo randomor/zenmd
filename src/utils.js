@@ -152,3 +152,38 @@ async function findImageRecursive(
 }
 
 export { findImageRecursive };
+
+const isPlainObject = (value) => {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+};
+
+export const deepMerge = (...objects) => {
+  const result = {};
+
+  for (const current of objects) {
+    if (!isPlainObject(current)) {
+      continue;
+    }
+
+    for (const [key, value] of Object.entries(current)) {
+      if (isPlainObject(value)) {
+        const existing = result[key];
+        result[key] = isPlainObject(existing)
+          ? deepMerge(existing, value)
+          : deepMerge(value);
+      } else if (Array.isArray(value)) {
+        result[key] = value.map((item) =>
+          isPlainObject(item) ? deepMerge(item) : item
+        );
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+
+  return result;
+};

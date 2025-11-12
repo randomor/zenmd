@@ -8,3 +8,4 @@
 #   title: "My Awesome Site"
 #   description: "A short description that appears in meta tags."
 #   favicon: "/favicon.png"
+#   ogImage: "/assets/og.png"

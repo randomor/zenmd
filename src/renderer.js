@@ -22,7 +22,6 @@ export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') =
     title,
     description,
     content,
-    favicon: pageAttributes.favicon || frontMatter?.favicon,
   });
 
   try {
