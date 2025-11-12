@@ -2,42 +2,48 @@ import fs from "fs/promises";
 import { describe, it, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert";
 import path from "path";
+import os from "os";
 
 describe("processFolder", () => {
   const inputFolder = "./src/__test__";
-  const outputFolder = "./dist";
-  beforeEach(
-    async () => await fs.rm(outputFolder, { recursive: true, force: true })
-  );
-  afterEach(
-    async () =>
-      await fs.rm(path.join(outputFolder, "robots.txt"), { force: true })
-  );
+  const fixturesRoot = path.join(inputFolder, "fixtures");
+  let outputFolder;
+  const allMarkdownFiles = [
+    "src/__test__/example.md",
+    "src/__test__/second level/nested.md",
+    "src/__test__/second level/nested with space.md",
+    "src/__test__/fixtures/favicon-builtin/index.md",
+    "src/__test__/fixtures/favicon-root/index.md",
+    "src/__test__/fixtures/site-config/index.md",
+  ];
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-test-"));
+  });
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
 
   it("picks markdown and convert", async () => {
     const { processFolder } = await import("./main.js");
     const parser = mock.fn((_) => ({
       title: "Example",
       content: "Hello World",
-      frontMatter: {},
+      pageFrontMatter: { favicon: "/favicon.svg" },
       inputFile: "src/__test__/example.md",
       inputFolder,
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
 
     await processFolder(inputFolder, outputFolder, { parser });
-    const fileList = [
-      "src/__test__/example.md",
-      "src/__test__/second level/nested.md",
-      "src/__test__/second level/nested with space.md",
-    ];
-
-    assert.strictEqual(parser.mock.calls.length, 3);
-    fileList.forEach((file, index) => {
-      assert.strictEqual(parser.mock.calls[index].arguments[0], file);
-    });
+    assert.strictEqual(parser.mock.calls.length, allMarkdownFiles.length);
+    const seenFiles = parser.mock.calls.map((call) => call.arguments[0]).sort();
+    const expectedFiles = [...allMarkdownFiles].sort();
+    assert.deepStrictEqual(seenFiles, expectedFiles);
   });
 
   it("supports individual file", async () => {
@@ -51,7 +57,7 @@ describe("processFolder", () => {
       inputFolder: "src/__test__/second level",
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
     await processFolder(inputArg, outputFolder, { parser });
 
@@ -65,12 +71,12 @@ describe("processFolder", () => {
     const parser = mock.fn((_) => ({
       title: "Example",
       content: "Hello World",
-      frontMatter: {},
+      pageFrontMatter: { favicon: "/favicon.svg" },
       inputFile: inputArg + "/example.md",
       inputFolder: "src/__test__",
       outputFileFolder: outputFolder,
       outputFileName: "example.html",
-      outputFilePath: "dist/example.html",
+      outputFilePath: path.join(outputFolder, "example.html"),
     }));
     const tags = [
       ["tag1", "value1"],
@@ -78,7 +84,7 @@ describe("processFolder", () => {
     ];
     await processFolder(inputArg, outputFolder, { parser, tags });
 
-    assert.strictEqual(parser.mock.calls.length, 3);
+    assert.strictEqual(parser.mock.calls.length, allMarkdownFiles.length);
     assert.strictEqual(parser.mock.calls[0].arguments[3].tags, tags);
   });
 
@@ -89,7 +95,7 @@ describe("processFolder", () => {
       return {
         title: "Example",
         content: "Hello World",
-        frontMatter: {},
+        pageFrontMatter: { favicon: "/favicon.svg" },
         inputFile: file,
         inputFolder,
         outputFileFolder: outputFolder,
@@ -113,11 +119,14 @@ describe("processFolder", () => {
     });
 
     // parser called for all files
-    assert.strictEqual(parser.mock.calls.length, 3);
+    assert.strictEqual(parser.mock.calls.length, allMarkdownFiles.length);
     // One page skipped, so only two pages rendered
-    assert.strictEqual(renderHtmlPageMock.mock.calls.length, 2);
+    assert.strictEqual(
+      renderHtmlPageMock.mock.calls.length,
+      allMarkdownFiles.length - 1
+    );
     const [pages] = renderSitemapMock.mock.calls[0].arguments;
-    assert.strictEqual(pages.length, 2);
+    assert.strictEqual(pages.length, allMarkdownFiles.length - 1);
   });
     
   it("generates a default robots.txt", async () => {
@@ -137,90 +146,58 @@ describe("processFolder", () => {
 
   it("copies favicon from input root when no favicon is defined", async () => {
     const { processFolder } = await import("./main.js");
-    const tempInput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-favicon-root-")
-    );
-    const tempOutput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-favicon-output-")
-    );
+    const fixtureInput = path.join(fixturesRoot, "favicon-root");
 
-    try {
-      const markdownPath = path.join(tempInput, "index.md");
-      await fs.writeFile(markdownPath, "# Hello\n\nContent");
-      const faviconPath = path.join(tempInput, "favicon.svg");
-      await fs.writeFile(faviconPath, "<svg xmlns='http://www.w3.org/2000/svg'></svg>");
+    await processFolder(fixtureInput, outputFolder);
 
-      await processFolder(tempInput, tempOutput);
+    const html = await fs.readFile(path.join(outputFolder, "index.html"), "utf-8");
+    assert.ok(html.includes('<link rel="icon" href="/favicon.svg">'));
 
-      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
-      assert.ok(html.includes('<link rel="icon" href="/favicon.svg">'));
-
-      const copiedExists = await fs
-        .access(path.join(tempOutput, "favicon.svg"))
-        .then(() => true)
-        .catch(() => false);
-      assert.ok(copiedExists);
-    } finally {
-      await fs.rm(tempInput, { recursive: true, force: true });
-      await fs.rm(tempOutput, { recursive: true, force: true });
-    }
+    const copiedExists = await fs
+      .access(path.join(outputFolder, "favicon.svg"))
+      .then(() => true)
+      .catch(() => false);
+    assert.ok(copiedExists);
   });
 
   it("uses built-in favicon and baseUrl when none is provided", async () => {
     const { processFolder } = await import("./main.js");
-    const tempInput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-favicon-builtin-")
+    const fixtureInput = path.join(fixturesRoot, "favicon-builtin");
+
+    await processFolder(fixtureInput, outputFolder, {
+      baseUrl: "https://example.com/docs",
+    });
+
+    const html = await fs.readFile(path.join(outputFolder, "index.html"), "utf-8");
+    assert.ok(
+      html.includes(
+        '<link rel="icon" href="https://example.com/docs/favicon.png">'
+      )
     );
-    const tempOutput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-favicon-out-")
-    );
 
-    try {
-      await fs.writeFile(path.join(tempInput, "index.md"), "# Title\n\nBody");
-
-      await processFolder(tempInput, tempOutput, {
-        baseUrl: "https://example.com/docs",
-      });
-
-      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
-      assert.ok(
-        html.includes(
-          '<link rel="icon" href="https://example.com/docs/favicon.png">'
-        )
-      );
-
-      const copiedExists = await fs
-        .access(path.join(tempOutput, "favicon.png"))
-        .then(() => true)
-        .catch(() => false);
-      assert.ok(copiedExists);
-    } finally {
-      await fs.rm(tempInput, { recursive: true, force: true });
-      await fs.rm(tempOutput, { recursive: true, force: true });
-    }
+    const copiedExists = await fs
+      .access(path.join(outputFolder, "favicon.png"))
+      .then(() => true)
+      .catch(() => false);
+    assert.ok(copiedExists);
   });
 
   it("merges front matter from site.yaml", async () => {
     const { processFolder } = await import("./main.js");
-    const tempInput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-site-config-")
-    );
-    const tempOutput = await fs.mkdtemp(
-      path.join(process.cwd(), "zenmd-site-output-")
+    const fixtureInput = path.join(fixturesRoot, "site-config");
+    const siteYamlPath = path.join(fixtureInput, "site.yaml");
+
+    await fs.writeFile(
+      siteYamlPath,
+      "front_matter:\n  description: Global description\n  favicon: /branding/icon.ico\n"
     );
 
     try {
-      await fs.writeFile(path.join(tempInput, "index.md"), "# Title\n\nBody");
-      await fs.writeFile(
-        path.join(tempInput, "site.yaml"),
-        "front_matter:\n  description: Global description\n  favicon: /branding/icon.ico\n"
-      );
-
-      await processFolder(tempInput, tempOutput, {
+      await processFolder(fixtureInput, outputFolder, {
         baseUrl: "https://example.com",
       });
 
-      const html = await fs.readFile(path.join(tempOutput, "index.html"), "utf-8");
+      const html = await fs.readFile(path.join(outputFolder, "index.html"), "utf-8");
       assert.ok(
         html.includes(
           '<meta name="description" content="Global description">'
@@ -232,18 +209,116 @@ describe("processFolder", () => {
         )
       );
     } finally {
-      await fs.rm(tempInput, { recursive: true, force: true });
-      await fs.rm(tempOutput, { recursive: true, force: true });
+      await fs.rm(siteYamlPath, { force: true });
     }
+  });
+
+  it("uses page ogImage when specified", async () => {
+    const { processFolder } = await import("./main.js");
+    
+    // Add ogImage to existing test file
+    const testFile = path.join(inputFolder, "example.md");
+    const originalContent = await fs.readFile(testFile, "utf-8");
+    await fs.writeFile(testFile, "---\nogImage: assets/testImage.webp\n---\n" + originalContent);
+
+    try {
+      await processFolder(inputFolder, outputFolder, {
+        baseUrl: "https://example.com",
+      });
+
+      const html = await fs.readFile(path.join(outputFolder, "example.html"), "utf-8");
+      assert.ok(
+        html.includes('<meta property="og:image" content="https://example.com/assets/testImage.webp">'),
+        "Should use page ogImage"
+      );
+    } finally {
+      await fs.writeFile(testFile, originalContent);
+    }
+  });
+
+  it("uses first image from content as ogImage fallback", async () => {
+    const { processFolder } = await import("./main.js");
+    
+    // Add image to existing test file
+    const testFile = path.join(inputFolder, "example.md");
+    const originalContent = await fs.readFile(testFile, "utf-8");
+    await fs.writeFile(
+      testFile,
+      originalContent + "\n\n![Test](./assets/testImage.webp)"
+    );
+
+    try {
+      await processFolder(inputFolder, outputFolder, {
+        baseUrl: "https://example.com",
+      });
+
+      const html = await fs.readFile(path.join(outputFolder, "example.html"), "utf-8");
+      const expectedMeta =
+        '<meta property="og:image" content="https://example.com/assets/testImage.webp">';
+      assert.ok(
+        html.includes(expectedMeta),
+        "Should use first image as ogImage"
+      );
+      assert.ok(
+        !html.includes('content="https://example.com/./'),
+        "Should not include ./ in og:image URL"
+      );
+    } finally {
+      await fs.writeFile(testFile, originalContent);
+    }
+  });
+
+  it("generates ogUrl with baseUrl and handles subdirectory paths", async () => {
+    const { processFolder } = await import("./main.js");
+
+    await processFolder(inputFolder, outputFolder, {
+      baseUrl: "https://example.com",
+    });
+
+    const html = await fs.readFile(path.join(outputFolder, "example.html"), "utf-8");
+    assert.ok(
+      html.includes('<meta property="og:url" content="https://example.com/example">'),
+      "Should generate ogUrl without .html"
+    );
+    assert.ok(!html.includes('/./'), "Should not have /./ in URLs");
+    
+    const nestedHtml = await fs.readFile(
+      path.join(outputFolder, "second-level/nested.html"),
+      "utf-8"
+    );
+    assert.ok(
+      nestedHtml.includes('<meta property="og:url" content="https://example.com/second-level/nested">'),
+      "Should handle nested paths"
+    );
+  });
+
+  it("omits ogUrl when no baseUrl provided", async () => {
+    const { processFolder } = await import("./main.js");
+
+    await processFolder(inputFolder, outputFolder);
+
+    const html = await fs.readFile(path.join(outputFolder, "example.html"), "utf-8");
+    assert.ok(
+      !html.includes('property="og:url"'),
+      "Should not include ogUrl without baseUrl"
+    );
   });
 });
 
 describe("processFolder - Sitemap", () => {
   const inputFolder = "./src/__test__";
-  const outputFolder = "./dist";
-  beforeEach(
-    async () => await fs.rm(outputFolder, { recursive: true, force: true })
-  );
+  let outputFolder;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-test-"));
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
 
   it("calls renderSitemap with correct arguments when sitemap is true and baseUrl is provided", async () => {
     const { processFolder } = await import("./main.js");

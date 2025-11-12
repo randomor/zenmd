@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {{#ogImage}}<meta property="og:image" content="{{{ogImage}}}">{{/ogImage}}
+  {{#ogUrl}}<meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
   <title>{{title}}</title>
 </head>
 

@@ -5,6 +5,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{{description}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  {{#ogImage}}<meta property="og:image" content="{{{ogImage}}}">{{/ogImage}}
+  {{#ogUrl}}<meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
   <link rel="icon" href="{{{favicon}}}">
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
   <!-- Serif body font and sans headings -->

@@ -91,12 +91,33 @@ zenmd ...
   When a `baseUrl` is supplied, ZenMD prefixes the resolved favicon path so
   templates can reference it with `{{favicon}}`.
 
+## Open Graph (OG) image & URL support
+
+- **OG image resolution order**:
+  1. Page/front matter `ogImage` value (from the Markdown file).
+  2. First image found in the Markdown content.
+  3. Site-wide `front_matter.ogImage` from `site.yaml`.
+  4. Built-in fallback (`og_image.png`).
+
+- **Image handling**:
+  - Absolute URLs (e.g., `https://example.com/image.png`) are used as-is without copying.
+  - Relative URLs are copied to the output folder (preserving the path relative to the input file).
+  - When `baseUrl` is provided, relative paths are prefixed with the base URL in the `og:image` meta tag.
+  - Without `baseUrl`, relative paths are rendered as-is (e.g., `./image.png`).
+
+- **OG URL (`og:url`) generation**:
+  - When `baseUrl` is provided, ZenMD generates the full canonical URL for each page.
+  - The URL is constructed as `baseUrl + output path` without the `.html` extension.
+  - For `index.html` pages, a trailing slash is used instead.
+  - When `baseUrl` is not provided, the `og:url` meta tag is omitted.
+
+- **Built-in templates**: All built-in layouts (`default`, `matrix`, `cyberpunk`) include OpenGraph meta tags for `og:title`, `og:description`, `og:image`, and `og:url`.
+
 ## Gaps
 
 Here is a list of known gaps:
 
 - The generated site doesn't have a RSS feed.
-- The generated site doesn't have default OG metatags, unless you override the default layout.
 
 Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
 

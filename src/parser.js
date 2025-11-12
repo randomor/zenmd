@@ -150,8 +150,9 @@ export const configParser = (
     .use(rehypeSlug)
     // 10. Unified Rehype Image Processor: Handles all <img> elements in the hast.
     // This plugin copies image files and adjusts their 'src' paths.
-    .use(() => (tree) => {
+    .use(() => (tree, file) => {
       const promises = [];
+      let firstImageRelative = null;
       visit(tree, "element", (node) => {
         if (
           node.tagName === "img" &&
@@ -160,6 +161,11 @@ export const configParser = (
         ) {
           const imageSrcOriginal = node.properties.src;
           const decodedUrl = decodeURI(imageSrcOriginal); // Path relative to MD file (e.g., "image.png" or "assets/image.png")
+
+          // Capture the first image for OG image fallback
+          if (!firstImageRelative) {
+            firstImageRelative = decodedUrl;
+          }
 
           // targetHref is path relative to output HTML file's directory, including imageDir and original subdirectories.
           // E.g., if imageDir="img_assets", decodedUrl="sub/pic.png", then targetHref="img_assets/sub/pic.png".
@@ -187,6 +193,10 @@ export const configParser = (
           node.properties.src = `./${encodedTargetHref}`;
         }
       });
+      // Store first image in file data for OG image resolution
+      if (firstImageRelative) {
+        file.data.firstImageRelative = firstImageRelative;
+      }
       if (promises.length > 0) {
         return Promise.all(promises).then(() => tree);
       }
@@ -278,10 +288,9 @@ export const parseMarkdown = async (
     );
     const file = await processor.process(data);
     const fileFrontMatter = file.data.frontmatter || {};
-    const globalFrontMatter =
-      (options && options.globalFrontMatter) || {};
-    const frontMatter = {
-      ...globalFrontMatter,
+    const siteFrontMatter = (options && options.siteFrontMatter) || {};
+    const frontMatterForFiltering = {
+      ...siteFrontMatter,
       ...fileFrontMatter,
     };
 
@@ -290,15 +299,26 @@ export const parseMarkdown = async (
     if (tags.length > 0) {
       const shouldRender = tags.every(([key, value]) => {
         if (value === "true") {
-          return frontMatter[key] && frontMatter[key].toString() === value;
+          return (
+            frontMatterForFiltering[key] &&
+            frontMatterForFiltering[key].toString() === value
+          );
         } else if (value === "false") {
-          return !frontMatter[key] || frontMatter[key].toString() !== "true";
+          return (
+            !frontMatterForFiltering[key] ||
+            frontMatterForFiltering[key].toString() !== "true"
+          );
         } else {
           return true;
         }
       });
       console.log(
-        chalk.yellow("Frontmatter::::", frontMatter, tags, shouldRender)
+        chalk.yellow(
+          "Frontmatter::::",
+          frontMatterForFiltering,
+          tags,
+          shouldRender
+        )
       );
       if (!shouldRender) {
         console.log(chalk.yellow(`Skipped: ${inputFile}`));
@@ -308,8 +328,11 @@ export const parseMarkdown = async (
 
     const htmlContent = String(file.value);
 
-    const title = file.data.meta?.title || frontMatter.title || inputFileName;
-    const description = frontMatter.description || `A page about ${title}`;
+    const title =
+      file.data.meta?.title || fileFrontMatter.title || inputFileName;
+    const description =
+      fileFrontMatter.description || `A page about ${title}`;
+    const firstImageRelative = file.data.firstImageRelative;
 
     if (Object.keys(fileFrontMatter).length > 0) {
       console.log(chalk.blueBright("Front Matter:"), fileFrontMatter);
@@ -326,7 +349,8 @@ export const parseMarkdown = async (
       title,
       description,
       content: htmlContent,
-      frontMatter,
+      pageFrontMatter: fileFrontMatter,
+      firstImageRelative,
       inputFile,
       inputFolder,
       outputFileFolder,
