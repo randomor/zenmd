@@ -182,6 +182,15 @@
       opacity: 0.9;
     }
 
+    .site-nav-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .site-nav-title a:hover {
+      text-decoration: underline;
+    }
+
     .site-nav-menu,
     .site-nav-submenu {
       list-style: none;
@@ -414,7 +423,7 @@
 <body{{#site_navigation}} data-site-navigation="true"{{/site_navigation}}>
   <div class="main-grid" id="main-grid">
     <aside class="site-sidebar" id="site-sidebar">
-      <div class="site-nav-title">Site</div>
+      <div class="site-nav-title" id="site-nav-title">Site</div>
       <nav id="site-nav"></nav>
     </aside>
 
@@ -447,6 +456,7 @@
       const siteSidebar = document.getElementById('site-sidebar');
       const siteNav = document.getElementById('site-nav');
       const siteNavEnabled = document.body?.dataset?.siteNavigation === 'true';
+      const siteNavTitle = document.getElementById('site-nav-title');
 
       if (!siteNavEnabled || !mainGrid || !siteSidebar || !siteNav) return;
 
@@ -572,6 +582,16 @@
           : `${currentPath}/`;
 
         mainGrid.classList.add('has-sidenav');
+
+        const rootHref = `${basePath}${sitemap.data.relative_path || '/'}` || '/';
+        if (siteNavTitle && sitemap.data?.createdAt) {
+          const link = document.createElement('a');
+          link.href = rootHref;
+          link.textContent = sitemap.data.title || 'Home';
+          link.className = 'site-nav-title-link';
+          siteNavTitle.textContent = '';
+          siteNavTitle.appendChild(link);
+        }
 
         const navList = createNavList(
           sitemap.data,
