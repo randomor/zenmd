@@ -47,6 +47,26 @@ const parseOrder = (value) => {
   return Number.isFinite(numeric) ? numeric : null;
 };
 
+const getFrontMatterValue = (frontMatter, key) => {
+  if (!frontMatter || typeof frontMatter !== "object") {
+    return undefined;
+  }
+  return Object.prototype.hasOwnProperty.call(frontMatter, key)
+    ? frontMatter[key]
+    : undefined;
+};
+
+const resolveOrderValue = (frontMatter) => {
+  const keys = ["nav_order", "navOrder", "nav-order", "order"];
+  for (const key of keys) {
+    const value = getFrontMatterValue(frontMatter, key);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+};
+
 export const buildRelativeUrlPath = (outputFolder, outputFilePath) => {
   let relPath = path.relative(outputFolder, outputFilePath);
   relPath = toPosixPath(relPath);
@@ -98,6 +118,7 @@ export const scanMarkdownMetadata = async (
   const firstH1 = extractFirstH1(parsed.content || "");
   const inputFileName = normalizePath(path.parse(inputFile).name);
   const title = fileFrontMatter.title || firstH1 || inputFileName;
+  const orderValue = resolveOrderValue(fileFrontMatter);
 
   const relativePath = path.relative(inputFolder, inputFile);
   const normalizedRelativePath = normalizePath(relativePath);
@@ -113,7 +134,7 @@ export const scanMarkdownMetadata = async (
     title,
     relative_path: relativeUrlPath,
     relativeFilePath: toPosixPath(normalizedRelativePath),
-    order: parseOrder(fileFrontMatter.nav_order),
+    order: parseOrder(orderValue),
     createdAt: toIsoDate(fileFrontMatter.createdAt, stats.birthtime),
     updatedAt: toIsoDate(fileFrontMatter.updatedAt, stats.mtime),
     tags: normalizeTags(fileFrontMatter.tags),
