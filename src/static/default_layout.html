@@ -46,6 +46,7 @@
       --disabled: #efefef;
       --content-width: 80rem;
       --sidebar-width: 300px;
+      --sidenav-width: 220px;
       --gap: 4rem;
     }
 
@@ -160,9 +161,103 @@
         max-width: 80ch;
       }
 
+      .main-grid.has-sidenav {
+        grid-template-columns: var(--sidenav-width) minmax(65ch, 80ch);
+        gap: var(--gap);
+        justify-content: center;
+        max-width: calc(var(--sidenav-width) + 80ch + var(--gap));
+      }
+
+      .main-grid.has-sidenav .site-sidebar {
+        display: block !important;
+      }
+
+      .main-grid.has-sidenav.has-sidebar {
+        grid-template-columns: var(--sidenav-width) minmax(65ch, 80ch) var(--sidebar-width);
+        gap: var(--gap);
+        justify-content: center;
+        max-width: calc(var(--sidenav-width) + 80ch + var(--sidebar-width) + (var(--gap) * 2));
+      }
+
       .hide-on-desktop {
         display: none !important;
       }
+    }
+
+    /* Site Navigation Sidebar */
+    .site-sidebar {
+      display: none;
+      width: 100% !important;
+      float: none !important;
+      margin: 0 !important;
+      background: none !important;
+      border: none !important;
+      border-right: 1px solid var(--disabled) !important;
+      position: sticky;
+      top: 4rem;
+      align-self: start;
+      max-height: calc(100vh - 6rem);
+      overflow-y: auto;
+      padding-right: 1.5rem;
+      font-family: var(--sans-font);
+      scrollbar-width: thin;
+      scrollbar-color: var(--disabled) transparent;
+    }
+
+    .site-nav-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.8;
+    }
+
+    .site-nav-menu,
+    .site-nav-submenu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .site-nav-item {
+      margin: 0;
+      padding: 0;
+    }
+
+    .site-nav-link,
+    .site-nav-link:visited {
+      display: block;
+      padding: 0.35rem 0;
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .site-nav-link:hover {
+      color: var(--text);
+    }
+
+    .site-nav-link.active {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .site-nav-section {
+      margin: 0.9rem 0 0.4rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-light);
+      opacity: 0.8;
+    }
+
+    .site-nav-submenu {
+      padding-left: 0.75rem;
+      border-left: 1px solid var(--disabled);
+      margin-left: 0.15rem;
     }
 
     /* TOC Sidebar Styles */
@@ -349,8 +444,13 @@
   <title>{{title}}</title>
 </head>
 
-<body>
+<body{{#site_navigation}} data-site-navigation="true"{{/site_navigation}}>
   <div class="main-grid" id="main-grid">
+    <aside class="site-sidebar" id="site-sidebar">
+      <div class="site-nav-title">Site</div>
+      <nav id="site-nav"></nav>
+    </aside>
+
     <main class="article">
       {{{content}}}
     </main>
@@ -375,6 +475,149 @@
   </footer>
 
   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const mainGrid = document.getElementById('main-grid');
+      const siteSidebar = document.getElementById('site-sidebar');
+      const siteNav = document.getElementById('site-nav');
+      const siteNavEnabled = document.body?.dataset?.siteNavigation === 'true';
+
+      if (!siteNavEnabled || !mainGrid || !siteSidebar || !siteNav) return;
+
+      const cacheKey = 'zenmd:sitemap-cache';
+
+      const getCachedSitemap = () => {
+        if (window.__zenmdSitemapCache) {
+          return window.__zenmdSitemapCache;
+        }
+        try {
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (error) {
+          return null;
+        }
+        return null;
+      };
+
+      const setCachedSitemap = (value) => {
+        window.__zenmdSitemapCache = value;
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(value));
+        } catch (error) {
+          return;
+        }
+      };
+
+      const buildSitemapCandidates = () => {
+        const pathname = window.location.pathname || '/';
+        const segments = pathname.split('/').filter(Boolean);
+        const candidates = [];
+        for (let i = segments.length; i >= 0; i -= 1) {
+          const prefix = i === 0 ? '' : `/${segments.slice(0, i).join('/')}`;
+          const candidate = prefix === '' ? '/sitemap.json' : `${prefix}/sitemap.json`;
+          candidates.push(candidate);
+        }
+        return Array.from(new Set(candidates));
+      };
+
+      const fetchSitemap = async () => {
+        const cached = getCachedSitemap();
+        if (cached) {
+          return cached;
+        }
+
+        const candidates = buildSitemapCandidates();
+        for (const candidate of candidates) {
+          try {
+            const response = await fetch(candidate, { cache: 'force-cache' });
+            if (!response.ok) {
+              continue;
+            }
+            const data = await response.json();
+            const urlPath = new URL(response.url).pathname;
+            const basePath = urlPath.endsWith('/sitemap.json')
+              ? urlPath.slice(0, -'/sitemap.json'.length)
+              : '';
+            const result = { data, basePath };
+            setCachedSitemap(result);
+            return result;
+          } catch (error) {
+            continue;
+          }
+        }
+        return null;
+      };
+
+      const normalizePath = (value) => {
+        if (!value) return '/';
+        if (value === '/') return '/';
+        return value.startsWith('/') ? value : `/${value}`;
+      };
+
+      const createNavList = (node, basePath, currentPath, alternatePath, depth = 0) => {
+        const list = document.createElement('ul');
+        list.className = depth === 0 ? 'site-nav-menu' : 'site-nav-submenu';
+
+        (node.children || []).forEach((child) => {
+          const li = document.createElement('li');
+          li.className = 'site-nav-item';
+
+          const isPage = Boolean(child.createdAt);
+
+          if (isPage) {
+            const link = document.createElement('a');
+            const href = `${basePath}${child.relative_path}`;
+            link.href = href || '/';
+            link.textContent = child.title || child.relative_path;
+            link.className = 'site-nav-link';
+            if (href === currentPath || href === alternatePath) {
+              link.classList.add('active');
+            }
+            li.appendChild(link);
+          } else {
+            const label = document.createElement('div');
+            label.className = 'site-nav-section';
+            label.textContent = child.title || child.relative_path;
+            li.appendChild(label);
+          }
+
+          if (child.children && child.children.length > 0) {
+            li.appendChild(
+              createNavList(child, basePath, currentPath, alternatePath, depth + 1)
+            );
+          }
+
+          list.appendChild(li);
+        });
+
+        return list;
+      };
+
+      const initSiteNav = async () => {
+        const sitemap = await fetchSitemap();
+        if (!sitemap || !sitemap.data) return;
+
+        const basePath = sitemap.basePath || '';
+        const currentPath = normalizePath(window.location.pathname || '/');
+        const alternatePath = currentPath.endsWith('/') && currentPath !== '/'
+          ? currentPath.slice(0, -1)
+          : `${currentPath}/`;
+
+        mainGrid.classList.add('has-sidenav');
+
+        const navList = createNavList(
+          sitemap.data,
+          basePath,
+          currentPath,
+          alternatePath
+        );
+        siteNav.appendChild(navList);
+      };
+
+      initSiteNav();
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
       const article = document.querySelector('main.article');
       const tocNav = document.getElementById('toc-nav');
