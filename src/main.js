@@ -15,27 +15,32 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const loadSiteFrontMatter = async (inputFolder) => {
-  const siteConfigPath = path.join(inputFolder, "site.yaml");
-  if (!(await fileExists(siteConfigPath))) {
-    return {};
-  }
+  const configFiles = ["site.yaml", "site.yml"];
+  let merged = {};
 
-  try {
-    const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
-    const parsedConfig = YAML.parse(siteConfigContent) || {};
-    if (
-      parsedConfig &&
-      typeof parsedConfig === "object" &&
-      parsedConfig.front_matter &&
-      typeof parsedConfig.front_matter === "object"
-    ) {
-      return parsedConfig.front_matter;
+  for (const fileName of configFiles) {
+    const siteConfigPath = path.join(inputFolder, fileName);
+    if (!(await fileExists(siteConfigPath))) {
+      continue;
     }
-  } catch (error) {
-    console.error("Error reading site.yaml:", error);
+
+    try {
+      const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
+      const parsedConfig = YAML.parse(siteConfigContent) || {};
+      if (
+        parsedConfig &&
+        typeof parsedConfig === "object" &&
+        parsedConfig.front_matter &&
+        typeof parsedConfig.front_matter === "object"
+      ) {
+        merged = deepMerge({}, merged, parsedConfig.front_matter);
+      }
+    } catch (error) {
+      console.error(`Error reading ${fileName}:`, error);
+    }
   }
 
-  return {};
+  return merged;
 };
 
 const findFaviconCandidate = async (inputFolder, subDirectory = "") => {
@@ -96,6 +101,51 @@ const ensureFallbackOgImage = async (outputFolder) => {
 
   await fs.copyFile(builtinPath, outputPath);
   return { outputPath, publicPath: "/og_image.png" };
+};
+
+const MAIN_ASSET_FILES = ["main.css", "main.js"];
+
+const normalizeBaseUrl = (value) => {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+};
+
+const resolveMainAssetSource = async (inputFolder, assetName) => {
+  const inputAssetPath = path.join(inputFolder, assetName);
+  if (await fileExists(inputAssetPath)) {
+    return inputAssetPath;
+  }
+
+  return path.join(__dirname, "static", assetName);
+};
+
+const copyMainAssetToOutput = async (sourcePath, outputFolder, assetName) => {
+  const outputPath = path.join(outputFolder, assetName);
+
+  if (path.resolve(sourcePath) === path.resolve(outputPath)) {
+    return { outputPath, publicPath: `/${assetName}` };
+  }
+
+  await fs.copyFile(sourcePath, outputPath);
+  return { outputPath, publicPath: `/${assetName}` };
+};
+
+const ensureMainAssets = async (inputFolder, outputFolder) => {
+  const results = {};
+
+  for (const assetName of MAIN_ASSET_FILES) {
+    const sourcePath = await resolveMainAssetSource(inputFolder, assetName);
+    results[assetName] = await copyMainAssetToOutput(
+      sourcePath,
+      outputFolder,
+      assetName
+    );
+  }
+
+  return results;
 };
 
 const isAbsoluteUrl = (url) => {
@@ -309,6 +359,43 @@ const resolveOgImageForPage = async (
   return undefined;
 };
 
+const normalizeBooleanValue = (value) => {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return value;
+};
+
+const getFrontMatterValue = (frontMatter, key) => {
+  if (!frontMatter || typeof frontMatter !== "object") {
+    return undefined;
+  }
+  return Object.prototype.hasOwnProperty.call(frontMatter, key)
+    ? frontMatter[key]
+    : undefined;
+};
+
+const resolveSiteNavigationFlag = (pageFrontMatter, siteFrontMatter) => {
+  const keys = ["site-navigation", "site_navigation", "siteNavigation"];
+  for (const key of keys) {
+    const pageValue = getFrontMatterValue(pageFrontMatter, key);
+    if (pageValue !== undefined) {
+      return normalizeBooleanValue(pageValue);
+    }
+  }
+
+  for (const key of keys) {
+    const siteValue = getFrontMatterValue(siteFrontMatter, key);
+    if (siteValue !== undefined) {
+      return normalizeBooleanValue(siteValue);
+    }
+  }
+
+  return undefined;
+};
+
 const computeOgUrl = (outputFilePath, inputFolder, outputFolder, baseUrl) => {
   if (!baseUrl) {
     return undefined;
@@ -352,6 +439,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const inputFolder = isFileArg ? path.dirname(inputArg) : inputArg;
     const inputGlob = isFileArg ? inputArg : path.join(inputFolder, "**/*.md");
     const files = await glob(inputGlob, globOptions);
+    const assetsBase = normalizeBaseUrl(baseUrl);
 
     const siteFrontMatter = await loadSiteFrontMatter(inputFolder);
     const parseOptions = {
@@ -390,6 +478,8 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     }
 
     const fallbackPublicPath = fallbackFavicon?.publicPath;
+
+    await ensureMainAssets(inputFolder, outputFolder);
 
     // Ensure fallback OG image is available
     const fallbackOgImage = await ensureFallbackOgImage(outputFolder);
@@ -440,6 +530,17 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
 
       if (ogUrl) {
         effectiveFrontMatter.ogUrl = ogUrl;
+      }
+
+      const siteNavigationFlag = resolveSiteNavigationFlag(
+        pageFrontMatter,
+        siteFrontMatter
+      );
+      if (siteNavigationFlag !== undefined) {
+        effectiveFrontMatter.site_navigation = siteNavigationFlag;
+      }
+      if (effectiveFrontMatter.assetsBase === undefined) {
+        effectiveFrontMatter.assetsBase = assetsBase;
       }
 
       const resolvedTitle =

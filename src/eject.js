@@ -7,6 +7,7 @@ import { fileExists } from "./utils.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const MAIN_ASSET_FILES = ["main.css", "main.js"];
 
 export const ejectLayout = async (layoutType) => {
   const layoutFileName = `${layoutType}_layout.html`;
@@ -64,6 +65,23 @@ export const ejectLayout = async (layoutType) => {
           "Skipped creating site.yaml because one already exists in this directory."
         )
       );
+    }
+
+    for (const assetName of MAIN_ASSET_FILES) {
+      const assetSource = path.join(__dirname, "static", assetName);
+      const assetTarget = path.join(process.cwd(), assetName);
+
+      if (await fileExists(assetTarget)) {
+        console.log(
+          chalk.yellow(
+            `Skipped creating ${assetName} because one already exists in this directory.`
+          )
+        );
+        continue;
+      }
+
+      await fs.copyFile(assetSource, assetTarget);
+      console.log(chalk.green(`Created ${assetName} for shared layout assets.`));
     }
   } catch (error) {
     console.error(chalk.red(`Error ejecting layout: ${error.message}`));

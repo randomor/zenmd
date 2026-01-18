@@ -48,6 +48,10 @@ describe("configParser", () => {
       assert.match(html.value, testCase.expected);
       assert(!html.value.includes(".html"));
     }
+
+    const standardLink = await parser.process("See [nested](nested.md).");
+    assert.match(standardLink.value, /href="nested"/);
+    assert(!standardLink.value.includes(".html"));
   });
 
   it("picks up front matter and first H1 fallback", async () => {

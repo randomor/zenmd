@@ -125,7 +125,8 @@ export const configParser = (
     .use(() => (tree) => {
       visit(tree, "link", (node) => {
         if (!isUrl(node.url) && node.url.match(/\.md$/)) {
-          node.url = normalizePath(node.url).replace(/\.md$/, ".html");
+          const normalized = normalizePath(node.url).replace(/\.md$/, "");
+          node.url = cleanLink ? normalized : `${normalized}.html`;
         }
       });
     })

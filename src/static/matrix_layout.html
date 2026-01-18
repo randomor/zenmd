@@ -11,23 +11,30 @@
   {{#ogUrl}}<meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
   <link rel="icon" href="{{{favicon}}}">
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+  <link rel="stylesheet" href="{{{assetsBase}}}/main.css">
   <title>{{title}}</title>
   <style>
     /* Matrix-inspired green-on-black theme */
     :root {
       --accent: #0f0;
       --code: #0f0;
+      --text: #0f0;
       --text-light: #28f728;
       --preformatted: #03e303;
       --border: #013f01;
+      --disabled: #032203;
+      --sidenav-width: 220px;
+      --content-width: 80rem;
+      --sidebar-width: 300px;
+      --gap: 4rem;
+      --sans-font: 'Courier New', Courier, monospace;
+      --mono-font: 'Courier New', Courier, monospace;
     }
 
     body {
       background-color: #000;
       color: #0f0;
       font-family: 'Courier New', Courier, monospace;
-      line-height: 1.8;
-      overflow-x: clip; /* Prevent horizontal scrollbars from full-bleed images */
     }
 
     h1,
@@ -57,25 +64,74 @@
       text-shadow: 0 0 5px #0f0;
     }
 
-    /* Full-bleed image support - allows images to span full viewport width */
-    .bleed {
-      display: block;
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: 50%;
-      transform: translateX(-50%);
+    .site-sidebar {
+      background: rgba(0, 0, 0, 0.95);
+    }
+
+    .site-nav-title,
+    .toc-title {
+      color: var(--accent);
+    }
+
+    .site-nav-link,
+    .site-nav-link:visited,
+    .toc-link,
+    .toc-link:visited {
+      text-shadow: 0 0 5px #0f0;
+    }
+
+    .site-nav-link:hover,
+    .toc-link:hover {
+      color: var(--accent);
+    }
+
+    .site-nav-submenu {
+      border-left-color: var(--border);
+    }
+
+    .toc-sidebar {
+      border-left-color: var(--border) !important;
+      scrollbar-color: var(--border) transparent;
     }
   </style>
 </head>
 
-<body>
-  <main class="article">
-    {{{content}}}
-  </main>
+<body{{#site_navigation}} data-site-navigation="true"{{/site_navigation}}>
+  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">
+    <span></span>
+    <span></span>
+  </button>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  <div class="main-grid" id="main-grid">
+    <aside class="site-sidebar" id="site-sidebar">
+      <div class="site-nav-title" id="site-nav-title">Site</div>
+      <nav id="site-nav"></nav>
+    </aside>
+
+    <main class="article">
+      {{{content}}}
+    </main>
+
+    <aside class="toc-sidebar" id="toc-sidebar">
+      <div class="toc-title">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="21" y1="10" x2="3" y2="10"></line>
+          <line x1="21" y1="6" x2="3" y2="6"></line>
+          <line x1="21" y1="14" x2="3" y2="14"></line>
+          <line x1="21" y1="18" x2="3" y2="18"></line>
+        </svg>
+        On this page
+      </div>
+      <nav id="toc-nav"></nav>
+    </aside>
+  </div>
 
   <footer>
     <p>Powered by <a href="https://www.npmjs.com/package/zenmd">ZenMD</a></p>
   </footer>
+
+  <script src="{{{assetsBase}}}/main.js" defer></script>
 </body>
 
 </html>

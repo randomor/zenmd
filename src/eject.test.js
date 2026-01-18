@@ -75,6 +75,13 @@ describe("eject.js functions", () => {
         assert.strictEqual(siteConfigExists, true);
         const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
         assert.ok(siteConfigContent.includes("front_matter"));
+
+        const mainCssPath = path.join(tempDir, "main.css");
+        const mainJsPath = path.join(tempDir, "main.js");
+        const mainCssExists = await fileExists(mainCssPath);
+        const mainJsExists = await fileExists(mainJsPath);
+        assert.strictEqual(mainCssExists, true);
+        assert.strictEqual(mainJsExists, true);
       } finally {
         process.chdir(originalCwd);
         await fs.rm(tempDir, { recursive: true, force: true });
@@ -119,7 +126,7 @@ describe("eject.js functions", () => {
 
         // Check for cyberpunk-specific styling
         assert.strictEqual(
-          content.includes("#00ff9f") || content.includes("#00b8ff"),
+          content.includes("#00f3ff") || content.includes("#ff0055"),
           true
         ); // Neon colors
       } finally {
