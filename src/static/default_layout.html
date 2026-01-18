@@ -14,8 +14,6 @@
   <link rel="icon" href="{{{favicon}}}">
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
   <link rel="stylesheet" href="{{{assetsBase}}}/main.css">
-  <!-- Serif body font and sans headings -->
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
     /* 
     To customize the default style, you should try to override the variables in SimpleCSS: 
@@ -38,12 +36,12 @@
       --text: #212121;
       --text-light: #585858;
       --border: #898EA4;
-      --accent: #0d47a1;
-      --accent-hover: #1266e2;
+      --accent: var(--text);
+      --accent-hover: var(--text);
       --accent-text: var(--bg);
       --code: #d81b60;
       --preformatted: #444;
-      --marked: #ffdd33;
+      --marked: #e2e2e2;
       --disabled: #efefef;
       --content-width: 80rem;
       --sidebar-width: 300px;
@@ -59,8 +57,8 @@
         --accent-bg: #2b2b2b;
         --text: #dcdcdc;
         --text-light: #ababab;
-        --accent: #ffb300;
-        --accent-hover: #ffe099;
+        --accent: var(--text);
+        --accent-hover: var(--text);
         --accent-text: var(--bg);
         --code: #f06292;
         --preformatted: #ccc;

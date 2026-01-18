@@ -7,108 +7,239 @@
   <meta name="description" content="{{description}}">
   <meta property="og:title" content="{{title}}">
   <meta property="og:description" content="{{description}}">
-  {{#ogImage}}<meta property="og:image" content="{{{ogImage}}}">{{/ogImage}}
-  {{#ogUrl}}<meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
+  {{#ogImage}}
+  <meta property="og:image" content="{{{ogImage}}}">{{/ogImage}}
+  {{#ogUrl}}
+  <meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
   <link rel="icon" href="{{{favicon}}}">
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
   <link rel="stylesheet" href="{{{assetsBase}}}/main.css">
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
-  <title>{{title}}</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    /* Cyberpunk-inspired neon theme on dark background */
+    /* Cyberpunk Theme Configuration */
     :root {
-      --accent: #00ff9f;
-      --code: #00b8ff;
-      --text: #e0e0e0;
-      --text-light: #00b8ff;
-      --preformatted: #00ff9f;
-      --border: #00ff9f;
-      --disabled: #07271d;
-      --sidenav-width: 220px;
-      --content-width: 80rem;
+      /* Fonts */
+      --sans-font: "Rajdhani", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --mono-font: "JetBrains Mono", "Fira Code", Consolas, monospace;
+      
+      /* Base Metrics */
+      --standard-border-radius: 0px; /* Sharp edges */
+      --border-width: 1px;
+      
+      /* Colors */
+      --bg: #050508;
+      --accent-bg: #0a0a10;
+      --text: #dcdce5;
+      --text-light: #717188;
+      
+      --border: #2a2a35;
+      
+      /* Cyberpunk Palette */
+      --accent: #00f3ff;      /* Cyan */
+      --accent-hover: #00c2cc;
+      --accent-text: #000000;
+      
+      --code: #ff0055;        /* Neon Red/Pink */
+      --preformatted: #dcdce5;
+      --marked: #f9e2af;
+      --disabled: #15151a;
+      
+      /* Layout Config (Must match main.css expectations) */
+      --content-width: 84rem;
       --sidebar-width: 300px;
+      --sidenav-width: 220px;
       --gap: 4rem;
-      --sans-font: -apple-system, BlinkMacSystemFont, "Avenir Next", Avenir,
-        "Nimbus Sans L", Roboto, "Noto Sans", "Segoe UI", Arial, Helvetica,
-        "Helvetica Neue", sans-serif;
-      --mono-font: Consolas, Menlo, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+
+      /* Effects */
+      --glow-cyan: 0 0 10px rgba(0, 243, 255, 0.4);
+      --glow-pink: 0 0 10px rgba(255, 0, 85, 0.4);
     }
 
     body {
-      background-color: #111;
-      color: #e0e0e0;
-      font-family: 'Merriweather', serif;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--sans-font);
+      background-image: 
+        linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center top;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: "Orbitron", sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-top: 2.5rem;
     }
 
     h1 {
-      color: #d600ff;
+      font-size: 2.5rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+      text-shadow: var(--glow-cyan);
+      margin-top: 0;
     }
 
     h2 {
-      color: #00ff9f;
+      font-size: 1.8rem;
+      border-left: 4px solid var(--code);
+      padding-left: 1rem;
     }
-
-    h3 {
-      color: #001eff;
-    }
-
-    h4 {
-      color: #00b8ff;
-    }
-
-    h5 {
-      color: #ff8c00;
-    }
-
-    h6 {
-      color: #bf00ff;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6 {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
+    
     a {
-      color: #00ff9f;
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      position: relative;
     }
-
+    
     a:hover {
-      color: #00b8ff;
+      color: #fff;
+      text-shadow: var(--glow-cyan);
     }
 
-    footer p,
-    footer p a {
-      color: #001eff;
-    }
-
+    /* Layout Components Overrides */
+    
+    /* Sidebar Background & Style */
     .site-sidebar {
-      background: rgba(10, 10, 10, 0.95);
+      background: rgba(5, 5, 8, 0.95) !important; /* Dark bg */
+      border-right: 1px solid var(--border) !important;
+      backdrop-filter: blur(8px);
     }
-
-    .site-nav-title,
-    .toc-title {
+    
+    /* Site Nav */
+    .site-nav-title {
+      color: var(--code);
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 0.1em;
+      text-shadow: var(--glow-pink);
+    }
+    
+    .site-nav-link {
+      font-family: var(--mono-font);
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+    
+    .site-nav-link:hover {
       color: var(--accent);
+      transform: translateX(5px);
     }
 
-    .site-nav-link:hover,
-    .toc-link:hover {
-      color: var(--accent);
+    .site-nav-link.active {
+      color: #fff;
+      font-weight: 700;
+      text-shadow: var(--glow-cyan);
     }
-
+    
     .site-nav-submenu {
       border-left-color: var(--border);
     }
 
+    /* TOC Sidebar */
     .toc-sidebar {
-      border-left-color: var(--border) !important;
-      scrollbar-color: var(--border) transparent;
+      border-left: 1px solid var(--border) !important;
+    }
+
+    .toc-title {
+      font-family: "Orbitron", sans-serif;
+      color: var(--text-light);
+    }
+
+    .toc-link.active {
+      color: var(--code);
+      border-left-color: var(--code);
+      text-shadow: var(--glow-pink);
+    }
+
+    /* Elements */
+    button {
+      font-family: "Orbitron", sans-serif;
+      text-transform: uppercase;
+      border-radius: 0;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      background: transparent;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: var(--accent);
+      color: #000;
+      box-shadow: var(--glow-cyan);
+    }
+
+    code {
+      font-family: var(--mono-font);
+      color: var(--code);
+      background: rgba(255, 0, 85, 0.1);
+      padding: 0.2em 0.4em;
+      border-radius: 0;
+    }
+
+    pre {
+      background: #08080c;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    pre::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--code), transparent);
+    }
+
+    blockquote {
+      border-left: 4px solid var(--accent);
+      background: linear-gradient(90deg, rgba(0, 243, 255, 0.05), transparent);
+      color: #fff;
+      font-style: italic;
+      border-radius: 0;
+    }
+    
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border: 1px solid #000;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Mobile Menu Toggle */
+    .menu-toggle {
+      color: var(--accent);
+    }
+    
+    /* Footer */
+    footer p {
+      font-family: var(--mono-font);
+      font-size: 0.75rem;
+      opacity: 0.6;
     }
   </style>
+  <title>{{title}}</title>
 </head>
 
 <body{{#site_navigation}} data-site-navigation="true"{{/site_navigation}}>

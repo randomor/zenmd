@@ -10,7 +10,8 @@ body {
 .icon.icon-link {
   width: 0.2em;
   height: 0.2em;
-  background-color: #333;
+  background-color: var(--text-light);
+  opacity: 0.4;
   /* Adjust color as needed */
   border-radius: 50%;
   /* This makes the icon round */
