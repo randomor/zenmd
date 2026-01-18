@@ -120,26 +120,59 @@ describe("renderSitemap", () => {
   const baseUrl = "https://example.com";
   let outputFolder;
   let sitemapPath;
-  let pageAttributesList;
+  let sitemapTree;
 
   beforeEach(async () => {
     outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-render-sitemap-"));
     sitemapPath = path.join(outputFolder, "sitemap.xml");
     await fs.mkdir(path.join(outputFolder, "second-level"), { recursive: true });
-    pageAttributesList = [
-      {
-        outputFileFolder: outputFolder,
-        outputFilePath: path.join(outputFolder, "example.html"),
-      },
-      {
-        outputFileFolder: path.join(outputFolder, "second-level"),
-        outputFilePath: path.join(outputFolder, "second-level", "nested.html"),
-      },
-      {
-        outputFileFolder: path.join(outputFolder, "second-level"),
-        outputFilePath: path.join(outputFolder, "second-level", "index.html"),
-      },
-    ];
+    sitemapTree = {
+      title: "root",
+      relative_path: "/",
+      order: null,
+      createdAt: null,
+      updatedAt: null,
+      tags: [],
+      children: [
+        {
+          title: "Example",
+          relative_path: "/example",
+          order: null,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-02T00:00:00.000Z",
+          tags: [],
+          children: [],
+        },
+        {
+          title: "second-level",
+          relative_path: "/second-level",
+          order: null,
+          createdAt: null,
+          updatedAt: null,
+          tags: [],
+          children: [
+            {
+              title: "Nested",
+              relative_path: "/second-level/nested",
+              order: null,
+              createdAt: "2024-01-03T00:00:00.000Z",
+              updatedAt: "2024-01-04T00:00:00.000Z",
+              tags: [],
+              children: [],
+            },
+            {
+              title: "Index",
+              relative_path: "/second-level/",
+              order: null,
+              createdAt: "2024-01-05T00:00:00.000Z",
+              updatedAt: "2024-01-06T00:00:00.000Z",
+              tags: [],
+              children: [],
+            },
+          ],
+        },
+      ],
+    };
   });
 
   afterEach(async () => {
@@ -150,7 +183,7 @@ describe("renderSitemap", () => {
   });
 
   it("creates a sitemap.xml with correct URLs", async () => {
-    await renderSitemap(pageAttributesList, sitemapPath, baseUrl);
+    await renderSitemap(sitemapTree, sitemapPath, baseUrl);
     const sitemapContent = await fs.readFile(sitemapPath, "utf-8");
     assert(sitemapContent.includes("<loc>https://example.com/example</loc>"));
     assert(

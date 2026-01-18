@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { findLayout } from "./utils.js";
 import mustache from "mustache";
 import chalk from "chalk";
-import path from "path";
+import { collectSitemapPaths } from "./sitemap.js";
 
 export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') => {
   const {
@@ -38,24 +38,12 @@ export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') =
 };
 
 export const renderSitemap = async (
-  pageAttributesList,
+  sitemapTree,
   sitemapPath,
   baseUrl
 ) => {
-  const outputFolder = path.dirname(sitemapPath);
-  const sitemap = pageAttributesList
-    .map(({ outputFilePath }) => {
-      // compute path relative to sitemap folder
-      let relPath = path.relative(outputFolder, outputFilePath);
-      // normalize to forward slashes
-      relPath = relPath.replace(/\\/g, "/");
-      // remove index.html and .html
-      relPath = relPath.replace(/index\.html$/, "");
-      relPath = relPath.replace(/\.html$/, "");
-      // ensure leading slash
-      const pageUrl = relPath.startsWith("/") ? relPath : `/${relPath}`;
-      return `<url><loc>${baseUrl}${pageUrl}</loc></url>`;
-    })
+  const sitemap = collectSitemapPaths(sitemapTree)
+    .map((relativePath) => `<url><loc>${baseUrl}${relativePath}</loc></url>`)
     .join("\n");
 
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>

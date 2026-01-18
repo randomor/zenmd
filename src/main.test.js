@@ -125,8 +125,9 @@ describe("processFolder", () => {
       renderHtmlPageMock.mock.calls.length,
       allMarkdownFiles.length - 1
     );
-    const [pages] = renderSitemapMock.mock.calls[0].arguments;
-    assert.strictEqual(pages.length, allMarkdownFiles.length - 1);
+    const [sitemapTree] = renderSitemapMock.mock.calls[0].arguments;
+    assert.ok(sitemapTree);
+    assert.ok(Array.isArray(sitemapTree.children));
   });
     
   it("generates a default robots.txt", async () => {
@@ -369,18 +370,18 @@ describe("processFolder - Sitemap", () => {
 
     // Should be called once
     assert.strictEqual(renderSitemapMock.mock.calls.length, 1);
-    const [pageAttributesList, sitemapPath, calledBaseUrl] =
+    const [sitemapTree, sitemapPath, calledBaseUrl] =
       renderSitemapMock.mock.calls[0].arguments;
-    assert.ok(Array.isArray(pageAttributesList));
+    assert.ok(sitemapTree);
+    assert.ok(Array.isArray(sitemapTree.children));
     assert.strictEqual(typeof sitemapPath, "string");
     assert.strictEqual(calledBaseUrl, baseUrl);
     assert.ok(sitemapPath.endsWith("sitemap.xml"));
-    assert.ok(pageAttributesList.length > 0);
-    assert.ok(pageAttributesList[0].outputFilePath);
+    assert.ok(sitemapTree.children.length > 0);
     // Ensure renderHtmlPage is called for each page
     assert.strictEqual(
       renderHtmlPageMock.mock.calls.length,
-      pageAttributesList.length
+      parser.mock.calls.length
     );
   });
 
