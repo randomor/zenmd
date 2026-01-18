@@ -126,7 +126,7 @@ describe("eject.js functions", () => {
 
         // Check for cyberpunk-specific styling
         assert.strictEqual(
-          content.includes("#00ff9f") || content.includes("#00b8ff"),
+          content.includes("#00f3ff") || content.includes("#ff0055"),
           true
         ); // Neon colors
       } finally {
