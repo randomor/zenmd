@@ -30,7 +30,7 @@ zenmd ...
 ## Preview locally
 
 ```bash
-zenmd preview ./docs
+zenmd preview ./docs # also support other args as main command like --layout
 ```
 
 The preview server rebuilds on file changes and serves clean URLs without the
@@ -66,20 +66,27 @@ The preview server rebuilds on file changes and serves clean URLs without the
       - Dimensions: `{width=320 height=240}` → `<img width="320" height="240">`
       - Data attributes: `{data-loading="lazy"}` → `<img data-loading="lazy">`
       - Any HTML attributes supported by `<img>` tags
+  - Built-in image lightbox: click any image to open it in an overlay.
+
   - Wiki links: `[[Another Page]] => [Another Page](/another-page.html)` by default. Use `--clean-link` (`-c`) to skip the `.html` suffix.
   - Auto header anchor links, so you can navigate to any H2-h5 headers directly.
-  - Table of contents generation when a `## Table of contents` or `## Contents` section is present.
+  - Table of contents generation when a `## Table of contents` or `## Contents` section is present. Renders a side TOC when the viewport has enough horizontal space.
   - Support raw html in markdown
 - Custom html Layout support (any layout.html files at the same level or above will be used, if none found, default layout will be used.)
 - Layout option via `--layout` to select a built-in theme (currently `default`, `matrix` or `cyberpunk`) when no custom layout.html is provided.
   - Support layout ejection, so you can customize the layout: `zenmd eject --layout <default|matrix|cyberpunk>`. This will create a `layout.html` in _current directory_.
+- Live preview server with rebuilds: `zenmd preview <inputFolder>`
 - Filter docs with matching tags `--tags=publish:true` which will only build files with `publish` flag or `--tags=draft:false` which will not build files with `draft` flag.
 - Automatically infer title from first H1
 - Optional `site.yaml` lets you define global front matter defaults (e.g. title,
   description, favicon) that individual pages can override.
-- Generates `sitemap.xml` at the output directory.
+- Generates `sitemap.json` at the output directory with a navigable tree (title, dates, tags, order).
+  - Ordering uses `nav_order`, `navOrder`, `nav-order`, or `order` front matter (lower comes first).
+- Generates `sitemap.xml` when a base URL is available.
   - Requires `baseUrl` option or `BASE_URL` env var, since `sitemap.xml` requires full URL.
-  - If missing base url, no sitemap will be generated.
+  - If missing base url, no `sitemap.xml` will be generated.
+- Optional site navigation sidebar for built-in layouts, powered by `sitemap.json`.
+  - Enable via `site_navigation: true` in front matter or `site.yaml`.
 - Automatically generates `robots.txt`
 - Auto-discovers favicons from your content folder, copying `favicon.*` to the
   output (with a built-in fallback when none is provided).
@@ -141,8 +148,6 @@ Feel free to create an issue or submit a PR on Github if you notice more deal br
 - Built with [remark](https://github.com/remarkjs/remark)
 - Table of contents powered by [remark-toc](https://github.com/remarkjs/remark-toc)
 - Default theme used [SimpleCss](https://simplecss.org/)
-- Cyberpunk theme used [Cyberpunk Color Palette
-  by mishiki](https://www.color-hex.com/color-palette/14887)
 - Alternatives: [markdown-styles](https://github.com/mixu/markdown-styles), [remark-cli](https://www.npmjs.com/package/remark-cli), [MkDocs](https://www.mkdocs.org/)
 
 ## Who made this?
