@@ -127,8 +127,13 @@
       font-family: var(--mono-font);
       font-size: 0.85rem;
       letter-spacing: 0.05em;
+      color: var(--text);
     }
-    
+
+    .site-nav-link:visited {
+      color: var(--text);
+    }
+
     .site-nav-link:hover {
       color: var(--accent);
       transform: translateX(5px);
@@ -229,7 +234,15 @@
 
     /* Mobile Menu Toggle */
     .menu-toggle {
-      color: var(--accent);
+      color: #e6fbff;
+      background: rgba(0, 243, 255, 0.12);
+      border: 1px solid rgba(0, 243, 255, 0.45) !important;
+      box-shadow: 0 0 12px rgba(0, 243, 255, 0.25);
+    }
+
+    .menu-toggle:hover {
+      background: rgba(0, 243, 255, 0.2);
+      box-shadow: 0 0 16px rgba(0, 243, 255, 0.35);
     }
     
     /* Footer */
