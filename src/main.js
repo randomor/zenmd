@@ -103,6 +103,51 @@ const ensureFallbackOgImage = async (outputFolder) => {
   return { outputPath, publicPath: "/og_image.png" };
 };
 
+const MAIN_ASSET_FILES = ["main.css", "main.js"];
+
+const normalizeBaseUrl = (value) => {
+  if (!value || typeof value !== "string") {
+    return "";
+  }
+
+  return value.endsWith("/") ? value.slice(0, -1) : value;
+};
+
+const resolveMainAssetSource = async (inputFolder, assetName) => {
+  const inputAssetPath = path.join(inputFolder, assetName);
+  if (await fileExists(inputAssetPath)) {
+    return inputAssetPath;
+  }
+
+  return path.join(__dirname, "static", assetName);
+};
+
+const copyMainAssetToOutput = async (sourcePath, outputFolder, assetName) => {
+  const outputPath = path.join(outputFolder, assetName);
+
+  if (path.resolve(sourcePath) === path.resolve(outputPath)) {
+    return { outputPath, publicPath: `/${assetName}` };
+  }
+
+  await fs.copyFile(sourcePath, outputPath);
+  return { outputPath, publicPath: `/${assetName}` };
+};
+
+const ensureMainAssets = async (inputFolder, outputFolder) => {
+  const results = {};
+
+  for (const assetName of MAIN_ASSET_FILES) {
+    const sourcePath = await resolveMainAssetSource(inputFolder, assetName);
+    results[assetName] = await copyMainAssetToOutput(
+      sourcePath,
+      outputFolder,
+      assetName
+    );
+  }
+
+  return results;
+};
+
 const isAbsoluteUrl = (url) => {
   try {
     new URL(url);
@@ -394,6 +439,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const inputFolder = isFileArg ? path.dirname(inputArg) : inputArg;
     const inputGlob = isFileArg ? inputArg : path.join(inputFolder, "**/*.md");
     const files = await glob(inputGlob, globOptions);
+    const assetsBase = normalizeBaseUrl(baseUrl);
 
     const siteFrontMatter = await loadSiteFrontMatter(inputFolder);
     const parseOptions = {
@@ -432,6 +478,8 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     }
 
     const fallbackPublicPath = fallbackFavicon?.publicPath;
+
+    await ensureMainAssets(inputFolder, outputFolder);
 
     // Ensure fallback OG image is available
     const fallbackOgImage = await ensureFallbackOgImage(outputFolder);
@@ -490,6 +538,9 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
       );
       if (siteNavigationFlag !== undefined) {
         effectiveFrontMatter.site_navigation = siteNavigationFlag;
+      }
+      if (effectiveFrontMatter.assetsBase === undefined) {
+        effectiveFrontMatter.assetsBase = assetsBase;
       }
 
       const resolvedTitle =

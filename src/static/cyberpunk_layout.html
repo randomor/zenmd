@@ -11,6 +11,7 @@
   {{#ogUrl}}<meta property="og:url" content="{{{ogUrl}}}">{{/ogUrl}}
   <link rel="icon" href="{{{favicon}}}">
   <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+  <link rel="stylesheet" href="{{{assetsBase}}}/main.css">
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
   <title>{{title}}</title>
   <style>
@@ -18,21 +19,25 @@
     :root {
       --accent: #00ff9f;
       --code: #00b8ff;
+      --text: #e0e0e0;
       --text-light: #00b8ff;
       --preformatted: #00ff9f;
       --border: #00ff9f;
+      --disabled: #07271d;
       --sidenav-width: 220px;
       --content-width: 80rem;
       --sidebar-width: 300px;
       --gap: 4rem;
+      --sans-font: -apple-system, BlinkMacSystemFont, "Avenir Next", Avenir,
+        "Nimbus Sans L", Roboto, "Noto Sans", "Segoe UI", Arial, Helvetica,
+        "Helvetica Neue", sans-serif;
+      --mono-font: Consolas, Menlo, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
     }
 
     body {
       background-color: #111;
       color: #e0e0e0;
       font-family: 'Merriweather', serif;
-      line-height: 1.8;
-      overflow-x: clip; /* Prevent horizontal scrollbars from full-bleed images */
     }
 
     h1 {
@@ -81,346 +86,37 @@
       color: #001eff;
     }
 
-    /* Full-bleed image support - allows images to span full viewport width */
-    .bleed {
-      display: block;
-      width: 100vw;
-      max-width: 100vw;
-      margin-left: 50%;
-      transform: translateX(-50%);
-    }
-
-    /* Main Grid Layout */
-    .main-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      max-width: var(--content-width);
-      margin: 0 auto;
-      padding: 0 1.5rem;
-      position: relative;
-      grid-column: 1 / -1;
-    }
-
-    /* Article formatting override to fit grid */
-    main.article {
-      width: 100%;
-      max-width: none;
-      margin: 0;
-      padding: 0;
-      min-width: 0;
-      overflow-wrap: break-word;
-      word-wrap: break-word;
-    }
-
-    /* Desktop View with Sidebar */
-    @media (min-width: 1100px) {
-      .main-grid.has-sidebar {
-        grid-template-columns: minmax(65ch, 80ch) var(--sidebar-width);
-        gap: var(--gap);
-        justify-content: center;
-        max-width: calc(80ch + var(--sidebar-width) + var(--gap));
-      }
-
-      .main-grid.has-sidebar .toc-sidebar {
-        display: block !important;
-      }
-
-      .main-grid.has-sidebar main.article {
-        max-width: 80ch;
-      }
-
-      .main-grid.has-sidenav {
-        grid-template-columns: var(--sidenav-width) minmax(65ch, 80ch);
-        gap: var(--gap);
-        justify-content: center;
-        max-width: calc(var(--sidenav-width) + 80ch + var(--gap));
-      }
-
-      .main-grid.has-sidenav .site-sidebar {
-        display: block !important;
-      }
-
-      .main-grid.has-sidenav.has-sidebar {
-        grid-template-columns: var(--sidenav-width) minmax(65ch, 80ch) var(--sidebar-width);
-        gap: var(--gap);
-        justify-content: center;
-        max-width: calc(var(--sidenav-width) + 80ch + var(--sidebar-width) + (var(--gap) * 2));
-      }
-
-      .hide-on-desktop {
-        display: none !important;
-      }
-    }
-
-    /* Site Navigation Sidebar */
     .site-sidebar {
-      display: none;
-      width: 100% !important;
-      float: none !important;
-      margin: 0 !important;
-      background: none !important;
-      border: none !important;
-      border-right: 1px solid var(--border) !important;
-      position: sticky;
-      top: 4rem;
-      align-self: start;
-      max-height: calc(100vh - 6rem);
-      overflow-y: auto;
-      padding-right: 1.5rem;
-      font-family: var(--sans-font);
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
+      background: rgba(10, 10, 10, 0.95);
     }
 
-    .site-nav-title {
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 1rem;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      opacity: 0.9;
-    }
-
-    .site-nav-title a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .site-nav-title a:hover {
-      text-decoration: underline;
-    }
-
-    .site-nav-menu,
-    .site-nav-submenu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .site-nav-item {
-      margin: 0;
-      padding: 0;
-    }
-
-    .site-nav-link,
-    .site-nav-link:visited {
-      display: block;
-      padding: 0.35rem 0;
-      color: var(--text-light);
-      text-decoration: none;
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    .site-nav-link:hover {
-      color: var(--accent);
-    }
-
-    .site-nav-link.active {
-      color: var(--accent);
-      font-weight: 500;
-    }
-
-    .site-nav-section {
-      margin: 0.9rem 0 0.4rem;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-light);
-      opacity: 0.85;
-    }
-
-    .site-nav-submenu {
-      padding-left: 0.75rem;
-      border-left: 1px solid var(--border);
-      margin-left: 0.15rem;
-    }
-
-    /* TOC Sidebar Styles */
-    .toc-sidebar {
-      display: none;
-      width: 100% !important;
-      float: none !important;
-      margin: 0 !important;
-      background: none !important;
-      border: none !important;
-      border-left: 1px solid var(--border) !important;
-      position: sticky;
-      top: 4rem;
-      align-self: start;
-      max-height: calc(100vh - 6rem);
-      overflow-y: auto;
-      padding-left: 1.5rem;
-      font-family: var(--sans-font);
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-
+    .site-nav-title,
     .toc-title {
-      font-weight: 600;
       color: var(--accent);
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      opacity: 0.9;
     }
 
-    .toc-title svg {
-      width: 1.1em;
-      height: 1.1em;
-      opacity: 0.8;
-    }
-
-    .toc-menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .toc-item {
-      margin: 0;
-      padding: 0;
-    }
-
-    .toc-link,
-    .toc-link:visited {
-      display: block;
-      padding: 0.5rem 0 0.5rem 1rem;
-      color: var(--text-light);
-      text-decoration: none;
-      font-size: 0.9rem;
-      border-left: 2px solid transparent;
-      margin-left: -1.6rem;
-      padding-left: 1.5rem;
-      transition: color 0.2s ease, border-color 0.2s ease;
-      line-height: 1.5;
-    }
-
+    .site-nav-link:hover,
     .toc-link:hover {
       color: var(--accent);
     }
 
-    .toc-link.active {
-      color: var(--accent);
-      border-left-color: var(--accent);
-      font-weight: 500;
+    .site-nav-submenu {
+      border-left-color: var(--border);
     }
 
-    .toc-sub-menu {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .toc-sub-menu .toc-link,
-    .toc-sub-menu .toc-link:visited {
-      color: var(--text-light);
-    }
-
-    .toc-sub-menu .toc-link {
-      font-size: 0.85rem;
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-      padding-left: 2.5rem;
-      margin-left: -1.6rem;
-      border-left: 2px solid transparent;
-    }
-
-    .toc-sub-menu .toc-link.active {
-      border-left-color: var(--accent);
-      color: var(--accent);
-    }
-
-    /* Lightbox Styles */
-    .lightbox-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.9);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-      cursor: zoom-out;
-      backdrop-filter: blur(5px);
-    }
-
-    .lightbox-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .lightbox-image {
-      max-width: 95%;
-      max-height: 95%;
-      object-fit: contain;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      border-radius: 4px;
-      cursor: default;
-      transform: scale(0.95);
-      transition: transform 0.3s ease;
-    }
-
-    .lightbox-overlay.active .lightbox-image {
-      transform: scale(1);
-    }
-
-    .lightbox-close {
-      position: absolute;
-      top: 1rem;
-      right: 1.5rem;
-      font-size: 3rem;
-      color: #fff;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-      line-height: 0.8;
-      font-family: var(--sans-font);
-      font-weight: 300;
-    }
-
-    .lightbox-close:hover {
-      opacity: 1;
-    }
-
-    /* Image/Twitter centering */
-    main.article img {
-      cursor: zoom-in;
-      transition: opacity 0.2s;
-      max-height: 50vh;
-      width: auto;
-      display: block;
-      margin: 1.5rem auto;
-    }
-
-    main.article iframe {
-      display: block;
-      margin: 1.5rem auto;
-      max-width: 100%;
-    }
-
-    main.article .twitter-tweet {
-      margin-left: auto !important;
-      margin-right: auto !important;
-    }
-
-    main.article img:hover {
-      opacity: 0.9;
+    .toc-sidebar {
+      border-left-color: var(--border) !important;
+      scrollbar-color: var(--border) transparent;
     }
   </style>
 </head>
 
 <body{{#site_navigation}} data-site-navigation="true"{{/site_navigation}}>
+  <button id="menu-toggle" class="menu-toggle" aria-label="Toggle navigation">
+    <span></span>
+    <span></span>
+  </button>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
   <div class="main-grid" id="main-grid">
     <aside class="site-sidebar" id="site-sidebar">
       <div class="site-nav-title" id="site-nav-title">Site</div>
@@ -450,307 +146,7 @@
     <p>Powered by <a href="https://www.npmjs.com/package/zenmd">ZenMD</a></p>
   </footer>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const mainGrid = document.getElementById('main-grid');
-      const siteSidebar = document.getElementById('site-sidebar');
-      const siteNav = document.getElementById('site-nav');
-      const siteNavEnabled = document.body?.dataset?.siteNavigation === 'true';
-      const siteNavTitle = document.getElementById('site-nav-title');
-
-      if (!siteNavEnabled || !mainGrid || !siteSidebar || !siteNav) return;
-
-      const cacheKey = 'zenmd:sitemap-cache';
-
-      const getCachedSitemap = () => {
-        if (window.__zenmdSitemapCache) {
-          return window.__zenmdSitemapCache;
-        }
-        try {
-          const cached = sessionStorage.getItem(cacheKey);
-          if (cached) {
-            return JSON.parse(cached);
-          }
-        } catch (error) {
-          return null;
-        }
-        return null;
-      };
-
-      const setCachedSitemap = (value) => {
-        window.__zenmdSitemapCache = value;
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify(value));
-        } catch (error) {
-          return;
-        }
-      };
-
-      const buildSitemapCandidates = () => {
-        const pathname = window.location.pathname || '/';
-        const segments = pathname.split('/').filter(Boolean);
-        const candidates = [];
-        for (let i = segments.length; i >= 0; i -= 1) {
-          const prefix = i === 0 ? '' : `/${segments.slice(0, i).join('/')}`;
-          const candidate = prefix === '' ? '/sitemap.json' : `${prefix}/sitemap.json`;
-          candidates.push(candidate);
-        }
-        return Array.from(new Set(candidates));
-      };
-
-      const fetchSitemap = async () => {
-        const cached = getCachedSitemap();
-        if (cached) {
-          return cached;
-        }
-
-        const candidates = buildSitemapCandidates();
-        for (const candidate of candidates) {
-          try {
-            const response = await fetch(candidate, { cache: 'force-cache' });
-            if (!response.ok) {
-              continue;
-            }
-            const data = await response.json();
-            const urlPath = new URL(response.url).pathname;
-            const basePath = urlPath.endsWith('/sitemap.json')
-              ? urlPath.slice(0, -'/sitemap.json'.length)
-              : '';
-            const result = { data, basePath };
-            setCachedSitemap(result);
-            return result;
-          } catch (error) {
-            continue;
-          }
-        }
-        return null;
-      };
-
-      const normalizePath = (value) => {
-        if (!value) return '/';
-        if (value === '/') return '/';
-        return value.startsWith('/') ? value : `/${value}`;
-      };
-
-      const createNavList = (node, basePath, currentPath, alternatePath, depth = 0) => {
-        const list = document.createElement('ul');
-        list.className = depth === 0 ? 'site-nav-menu' : 'site-nav-submenu';
-
-        (node.children || []).forEach((child) => {
-          const li = document.createElement('li');
-          li.className = 'site-nav-item';
-
-          const isPage = Boolean(child.createdAt);
-
-          if (isPage) {
-            const link = document.createElement('a');
-            const href = `${basePath}${child.relative_path}`;
-            link.href = href || '/';
-            link.textContent = child.title || child.relative_path;
-            link.className = 'site-nav-link';
-            if (href === currentPath || href === alternatePath) {
-              link.classList.add('active');
-            }
-            li.appendChild(link);
-          } else {
-            const label = document.createElement('div');
-            label.className = 'site-nav-section';
-            label.textContent = child.title || child.relative_path;
-            li.appendChild(label);
-          }
-
-          if (child.children && child.children.length > 0) {
-            li.appendChild(
-              createNavList(child, basePath, currentPath, alternatePath, depth + 1)
-            );
-          }
-
-          list.appendChild(li);
-        });
-
-        return list;
-      };
-
-      const initSiteNav = async () => {
-        const sitemap = await fetchSitemap();
-        if (!sitemap || !sitemap.data) return;
-
-        const basePath = sitemap.basePath || '';
-        const currentPath = normalizePath(window.location.pathname || '/');
-        const alternatePath = currentPath.endsWith('/') && currentPath !== '/'
-          ? currentPath.slice(0, -1)
-          : `${currentPath}/`;
-
-        mainGrid.classList.add('has-sidenav');
-
-        const rootHref = `${basePath}${sitemap.data.relative_path || '/'}` || '/';
-        if (siteNavTitle && sitemap.data?.createdAt) {
-          const link = document.createElement('a');
-          link.href = rootHref;
-          link.textContent = sitemap.data.title || 'Home';
-          link.className = 'site-nav-title-link';
-          siteNavTitle.textContent = '';
-          siteNavTitle.appendChild(link);
-        }
-
-        const navList = createNavList(
-          sitemap.data,
-          basePath,
-          currentPath,
-          alternatePath
-        );
-        siteNav.appendChild(navList);
-      };
-
-      initSiteNav();
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const article = document.querySelector('main.article');
-      const tocNav = document.getElementById('toc-nav');
-      const mainGrid = document.getElementById('main-grid');
-
-      if (!article || !tocNav || !mainGrid) return;
-
-      const headers = Array.from(article.querySelectorAll('h2, h3'));
-      if (headers.length === 0) return;
-
-      const isContentsHeader = (header) => {
-        const text = (header.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-        const id = (header.id || '').toLowerCase();
-        return text === 'contents' ||
-          text === 'table of contents' ||
-          id === 'contents' ||
-          id === 'table-of-contents';
-      };
-
-      const contentsHeader = headers.find(isContentsHeader);
-      if (!contentsHeader) return;
-
-      const contentHeaders = headers.filter((header) => header !== contentsHeader);
-      if (contentHeaders.length === 0) return;
-
-      mainGrid.classList.add('has-sidebar');
-      contentsHeader.classList.add('hide-on-desktop');
-
-      const nextEl = contentsHeader.nextElementSibling;
-      if (nextEl && (nextEl.tagName === 'UL' || nextEl.tagName === 'OL')) {
-        nextEl.classList.add('hide-on-desktop');
-      }
-
-      const ul = document.createElement('ul');
-      ul.className = 'toc-menu';
-
-      let currentH2Li = null;
-      let currentSubMenu = null;
-
-      contentHeaders.forEach((header) => {
-        if (!header.id) {
-          header.id = header.textContent.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        }
-
-        const li = document.createElement('li');
-        li.className = 'toc-item';
-
-        const a = document.createElement('a');
-        a.href = '#' + header.id;
-        a.innerText = header.textContent.trim();
-        a.className = 'toc-link';
-
-        li.appendChild(a);
-
-        if (header.tagName === 'H2') {
-          ul.appendChild(li);
-          currentH2Li = li;
-          currentSubMenu = null;
-        } else if (header.tagName === 'H3' && currentH2Li) {
-          if (!currentSubMenu) {
-            currentSubMenu = document.createElement('ul');
-            currentSubMenu.className = 'toc-sub-menu';
-            currentH2Li.appendChild(currentSubMenu);
-          }
-          currentSubMenu.appendChild(li);
-        } else {
-          ul.appendChild(li);
-        }
-      });
-
-      tocNav.appendChild(ul);
-
-      const onScroll = () => {
-        let current = '';
-        const scrollPos = window.scrollY;
-
-        for (const section of contentHeaders) {
-          const sectionTop = section.offsetTop;
-          if (scrollPos >= sectionTop - 150) {
-            current = section.getAttribute('id');
-          }
-        }
-
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) {
-          current = contentHeaders[contentHeaders.length - 1].getAttribute('id');
-        }
-
-        document.querySelectorAll('.toc-sidebar .toc-link').forEach((link) => {
-          link.classList.remove('active');
-          if (link.getAttribute('href') === '#' + current) {
-            link.classList.add('active');
-          }
-        });
-      };
-
-      window.addEventListener('scroll', onScroll);
-      onScroll();
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const lightboxOverlay = document.createElement('div');
-      lightboxOverlay.className = 'lightbox-overlay';
-      lightboxOverlay.innerHTML = `
-        <span class="lightbox-close">&times;</span>
-        <img class="lightbox-image" src="" alt="Lightbox Image">
-      `;
-      document.body.appendChild(lightboxOverlay);
-
-      const lightboxImage = lightboxOverlay.querySelector('.lightbox-image');
-      const lightboxClose = lightboxOverlay.querySelector('.lightbox-close');
-
-      const openLightbox = (src) => {
-        lightboxImage.src = src;
-        lightboxOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-      };
-
-      const closeLightbox = () => {
-        lightboxOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-        setTimeout(() => {
-          lightboxImage.src = '';
-        }, 300);
-      };
-
-      document.querySelectorAll('main.article img').forEach((img) => {
-        img.addEventListener('click', (event) => {
-          event.stopPropagation();
-          openLightbox(img.src);
-        });
-      });
-
-      lightboxClose.addEventListener('click', closeLightbox);
-      lightboxOverlay.addEventListener('click', (event) => {
-        if (event.target === lightboxOverlay) {
-          closeLightbox();
-        }
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && lightboxOverlay.classList.contains('active')) {
-          closeLightbox();
-        }
-      });
-    });
-  </script>
+  <script src="{{{assetsBase}}}/main.js" defer></script>
 </body>
 
 </html>
