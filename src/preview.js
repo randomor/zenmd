@@ -68,6 +68,7 @@ const resolveOutputFile = async (outputFolder, pathname) => {
 
   const hasExtension = path.posix.extname(normalizedPath) !== "";
   const candidates = [];
+  const wantsTrailingSlash = !hasExtension && !normalizedPath.endsWith("/");
 
   if (hasExtension) {
     candidates.push(normalizedPath);
@@ -92,6 +93,9 @@ const resolveOutputFile = async (outputFolder, pathname) => {
     }
 
     if (await fileExists(candidatePath)) {
+      if (wantsTrailingSlash && candidate.endsWith("/index.html")) {
+        return { redirect: `${normalizedPath}/` };
+      }
       return { filePath: candidatePath };
     }
   }
