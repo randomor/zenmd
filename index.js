@@ -2,6 +2,7 @@
 import { processFolder } from "./src/main.js";
 import { fileExists, folderEmpty } from "./src/utils.js";
 import { ejectLayout } from "./src/eject.js";
+import { startPreviewServer } from "./src/preview.js";
 import readline from "readline";
 import yargs from "yargs";
 import chalk from "chalk";
@@ -74,6 +75,34 @@ const runBuildCommand = async (argv) => {
   }
 };
 
+const runPreviewCommand = async (argv) => {
+  console.log(chalk.blue("Preview input: "), chalk.green(argv.input));
+  if (argv.tags) {
+    console.log(
+      chalk.blue("Filtering matched files by tags: "),
+      chalk.green(argv.tags)
+    );
+  }
+  console.log(chalk.blue("Output folder: "), chalk.green(argv.output));
+  console.log(chalk.blue("Preview port: "), chalk.green(argv.port));
+
+  const tagsKeyValue = argv.tags && argv.tags.map((tag) => tag.split(":"));
+  const cleanLink =
+    argv.cleanLink !== undefined ? argv.cleanLink : true;
+
+  await startPreviewServer({
+    input: argv.input,
+    outputFolder: argv.output,
+    port: argv.port,
+    options: {
+      tags: tagsKeyValue,
+      baseUrl: argv.baseUrl,
+      layout: argv.layout,
+      cleanLink,
+    },
+  });
+};
+
 // Parse arguments and execute
 const argv = yargs(hideBin(process.argv))
   .command(
@@ -88,6 +117,25 @@ const argv = yargs(hideBin(process.argv))
     async (argv) => {
       // This handler will run for the default command
       await runBuildCommand(argv);
+    }
+  )
+  .command(
+    "preview [input]",
+    "Build and preview markdown with live rebuilds",
+    (yargs) => {
+      yargs.positional("input", {
+        describe: "Input folder path or file path",
+        default: "./docs",
+      });
+      yargs.option("port", {
+        alias: "p",
+        type: "number",
+        describe: "Preview server port",
+        default: 4173,
+      });
+    },
+    async (argv) => {
+      await runPreviewCommand(argv);
     }
   )
   .command(

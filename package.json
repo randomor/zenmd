@@ -22,6 +22,7 @@
   },
   "scripts": {
     "start": "node index.js",
+    "preview": "node index.js preview",
     "test": "node --test"
   },
   "dependencies": {

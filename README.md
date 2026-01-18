@@ -27,6 +27,15 @@ zenmd ...
 2. Drag and drop the generated folder into Netlify
 3. Or `netlify deploy`
 
+## Preview locally
+
+```bash
+zenmd preview ./docs
+```
+
+The preview server rebuilds on file changes and serves clean URLs without the
+`.html` extension.
+
 ## Use Cases
 
 - Bring your own editor and host. Obsidian, Bear, Typora, VS Code... Netlify, Vercel, Cloudflare...
