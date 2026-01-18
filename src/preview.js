@@ -144,7 +144,13 @@ export const startPreviewServer = async ({
     }
 
     const url = new URL(req.url, "http://localhost");
-    const pathname = decodeURIComponent(url.pathname || "/");
+    let pathname = "/";
+    try {
+      pathname = decodeURIComponent(url.pathname || "/");
+    } catch (error) {
+      writeResponse(res, 400, "Bad request");
+      return;
+    }
     const search = url.search || "";
 
     const result = await resolveOutputFile(resolvedOutput, pathname);
