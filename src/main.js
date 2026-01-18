@@ -2,6 +2,7 @@ import path from "path";
 import { glob } from "glob";
 import { renderHtmlPage, renderSitemap } from "./renderer.js";
 import { parseMarkdown } from "./parser.js";
+import { buildSitemapTree, scanMarkdownMetadata } from "./sitemap.js";
 import fs from "fs/promises";
 import { fileExists, deepMerge } from "./utils.js";
 import YAML from "yaml";
@@ -366,6 +367,16 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     );
     const pageAttributesList = (await Promise.all(pagePromises)).filter(Boolean);
 
+    const sitemapScanPromises = files.map((file) =>
+      scanMarkdownMetadata(file, inputFolder, outputFolder, parseOptions)
+    );
+    const sitemapEntries = (await Promise.all(sitemapScanPromises)).filter(
+      Boolean
+    );
+    const sitemapTree = buildSitemapTree(sitemapEntries);
+    const sitemapJsonPath = path.join(outputFolder, "sitemap.json");
+    await fs.writeFile(sitemapJsonPath, JSON.stringify(sitemapTree, null, 2));
+
     let fallbackFavicon;
     const siteHasFavicon = Boolean(siteFrontMatter?.favicon);
     const needsFaviconFallback =
@@ -451,7 +462,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     // render SiteMap
     if (sitemap && baseUrl) {
       await renderSitemapFn(
-        enhancedPageAttributes,
+        sitemapTree,
         path.join(outputFolder, "sitemap.xml"),
         baseUrl
       );
