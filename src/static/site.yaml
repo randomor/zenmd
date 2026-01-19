@@ -9,3 +9,10 @@
 #   description: "A short description that appears in meta tags."
 #   favicon: "/favicon.png"
 #   ogImage: "/assets/og.png"
+#
+# rss:
+#   limit: 5
+#   title: "My Awesome Site RSS"
+#   description: "Recent posts"
+#   language: "en"
+#   link: "https://example.com"

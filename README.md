@@ -85,6 +85,7 @@ The preview server rebuilds on file changes and serves clean URLs without the
 - Generates `sitemap.xml` when a base URL is available.
   - Requires `baseUrl` option or `BASE_URL` env var, since `sitemap.xml` requires full URL.
   - If missing base url, no `sitemap.xml` will be generated.
+- Generates `rss.xml` with the most recent posts (defaults to 5), configurable via `site.yaml`.
 - Optional site navigation sidebar for built-in layouts, powered by `sitemap.json`.
   - Enable via `site_navigation: true` in front matter or `site.yaml`.
 - Automatically generates `robots.txt`
@@ -97,6 +98,18 @@ The preview server rebuilds on file changes and serves clean URLs without the
   your Markdown files. Keys under `front_matter` behave like page-level front
   matter and are merged into every document (page front matter still wins). Run
   `zenmd eject` to scaffold both a layout and an example `site.yaml`.
+- **RSS feed configuration**:
+  - Customize the RSS feed by adding an `rss` block in `site.yaml`.
+  - Defaults to 5 items and uses `baseUrl` (or `rss.link`) for links.
+  - Example:
+    ```yaml
+    rss:
+      limit: 5
+      title: "My Site RSS"
+      description: "Recent posts"
+      language: "en"
+      link: "https://example.com"
+    ```
 - **Favicon resolution order**:
   1. Page/front matter `favicon` value (merged from `site.yaml` or the Markdown
      file).
@@ -132,8 +145,7 @@ The preview server rebuilds on file changes and serves clean URLs without the
 ## Gaps
 
 Here is a list of known gaps:
-
-- The generated site doesn't have a RSS feed.
+- (none currently listed)
 
 Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
 
