@@ -421,3 +421,80 @@ describe("processFolder - Sitemap", () => {
     );
   });
 });
+
+describe("processFolder - RSS", () => {
+  let outputFolder;
+  let inputFolder;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-test-"));
+    inputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-input-"));
+
+    await fs.writeFile(
+      path.join(inputFolder, "first.md"),
+      "# First post\n\nSome content"
+    );
+    await fs.writeFile(
+      path.join(inputFolder, "second.md"),
+      "# Second post\n\nMore content"
+    );
+    await fs.writeFile(
+      path.join(inputFolder, "site.yaml"),
+      [
+        "front_matter:",
+        "  title: Example Site",
+        "  description: Example description",
+        "rss:",
+        "  limit: 1",
+        "  title: Example RSS",
+        "  description: Latest posts",
+        "",
+      ].join("\n")
+    );
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+    if (inputFolder) {
+      await fs.rm(inputFolder, { recursive: true, force: true });
+      inputFolder = undefined;
+    }
+  });
+
+  it("calls renderRss with recent entries and site.yaml config", async () => {
+    const { processFolder } = await import("./main.js");
+    const parser = mock.fn((file) => ({
+      title: path.basename(file, ".md"),
+      content: "Hello World",
+      pageFrontMatter: {},
+      inputFile: file,
+      inputFolder,
+      outputFileFolder: outputFolder,
+      outputFileName: path.basename(file, ".md") + ".html",
+      outputFilePath: path.join(
+        outputFolder,
+        path.basename(file, ".md") + ".html"
+      ),
+    }));
+
+    const renderRssMock = mock.fn();
+    const baseUrl = "https://example.com";
+
+    await processFolder(inputFolder, outputFolder, {
+      parser,
+      baseUrl,
+      renderRss: renderRssMock,
+    });
+
+    assert.strictEqual(renderRssMock.mock.calls.length, 1);
+    const [rssItems, rssPath, rssConfig] =
+      renderRssMock.mock.calls[0].arguments;
+    assert.strictEqual(rssItems.length, 1);
+    assert.ok(rssPath.endsWith("rss.xml"));
+    assert.strictEqual(rssConfig.title, "Example RSS");
+    assert.strictEqual(rssConfig.description, "Latest posts");
+  });
+});

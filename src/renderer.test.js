@@ -3,7 +3,7 @@ import assert from "node:assert";
 import path from "path";
 import os from "os";
 import { describe, it, beforeEach, afterEach } from "node:test";
-import { renderHtmlPage, renderSitemap } from "./renderer.js";
+import { renderHtmlPage, renderRss, renderSitemap } from "./renderer.js";
 
 const inputFolder = "./src/__test__";
 describe("renderHtmlPage", () => {
@@ -195,5 +195,59 @@ describe("renderSitemap", () => {
       sitemapContent.includes("<loc>https://example.com/second-level/</loc>")
     );
     assert(sitemapContent.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
+  });
+});
+
+describe("renderRss", () => {
+  let outputFolder;
+  let rssPath;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-render-rss-"));
+    rssPath = path.join(outputFolder, "rss.xml");
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
+
+  it("creates an rss.xml feed with items", async () => {
+    const rssItems = [
+      {
+        title: "First Post",
+        link: "https://example.com/first",
+        guid: "https://example.com/first",
+        description: "First description",
+        pubDate: "Wed, 01 Jan 2025 00:00:00 GMT",
+        categories: ["news"],
+      },
+      {
+        title: "Second Post",
+        link: "https://example.com/second",
+        guid: "https://example.com/second",
+        description: "Second description",
+        pubDate: "Thu, 02 Jan 2025 00:00:00 GMT",
+        categories: [],
+      },
+    ];
+
+    await renderRss(rssItems, rssPath, {
+      title: "Example Feed",
+      link: "https://example.com",
+      description: "Latest updates",
+      language: "en",
+      generator: "ZenMD",
+      lastBuildDate: "Thu, 02 Jan 2025 00:00:00 GMT",
+    });
+
+    const rssContent = await fs.readFile(rssPath, "utf-8");
+    assert(rssContent.includes("<title>Example Feed</title>"));
+    assert(rssContent.includes("<link>https://example.com</link>"));
+    assert(rssContent.includes("<item>"));
+    assert(rssContent.includes("<category>news</category>"));
+    assert(rssContent.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
   });
 });

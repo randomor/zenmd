@@ -118,6 +118,7 @@ export const scanMarkdownMetadata = async (
   const firstH1 = extractFirstH1(parsed.content || "");
   const inputFileName = normalizePath(path.parse(inputFile).name);
   const title = fileFrontMatter.title || firstH1 || inputFileName;
+  const description = fileFrontMatter.description || null;
   const orderValue = resolveOrderValue(fileFrontMatter);
 
   const relativePath = path.relative(inputFolder, inputFile);
@@ -132,6 +133,7 @@ export const scanMarkdownMetadata = async (
 
   return {
     title,
+    description,
     relative_path: relativeUrlPath,
     relativeFilePath: toPosixPath(normalizedRelativePath),
     order: parseOrder(orderValue),
@@ -143,6 +145,7 @@ export const scanMarkdownMetadata = async (
 
 const createNode = ({
   title,
+  description = null,
   relative_path,
   order = null,
   createdAt = null,
@@ -150,6 +153,7 @@ const createNode = ({
   tags = [],
 }) => ({
   title,
+  description,
   relative_path,
   order,
   createdAt,
@@ -162,6 +166,7 @@ export const buildSitemapTree = (entries) => {
   const rootEntry = entries.find((entry) => entry.relative_path === "/");
   const root = createNode({
     title: rootEntry?.title || "root",
+    description: rootEntry?.description ?? null,
     relative_path: "/",
     order: rootEntry?.order ?? null,
     createdAt: rootEntry?.createdAt ?? null,
@@ -198,6 +203,7 @@ export const buildSitemapTree = (entries) => {
     current.children.push(
       createNode({
         title: entry.title,
+        description: entry.description ?? null,
         relative_path: entry.relative_path,
         order: entry.order,
         createdAt: entry.createdAt,

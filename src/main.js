@@ -1,6 +1,6 @@
 import path from "path";
 import { glob } from "glob";
-import { renderHtmlPage, renderSitemap } from "./renderer.js";
+import { renderHtmlPage, renderRss, renderSitemap } from "./renderer.js";
 import { parseMarkdown } from "./parser.js";
 import { buildSitemapTree, scanMarkdownMetadata } from "./sitemap.js";
 import fs from "fs/promises";
@@ -14,9 +14,10 @@ const FAVICON_EXTENSIONS = ["ico", "png", "svg", "jpg", "jpeg", "webp", "gif"];
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const loadSiteFrontMatter = async (inputFolder) => {
+const loadSiteConfig = async (inputFolder) => {
   const configFiles = ["site.yaml", "site.yml"];
-  let merged = {};
+  let mergedFrontMatter = {};
+  let mergedRss = {};
 
   for (const fileName of configFiles) {
     const siteConfigPath = path.join(inputFolder, fileName);
@@ -33,14 +34,29 @@ const loadSiteFrontMatter = async (inputFolder) => {
         parsedConfig.front_matter &&
         typeof parsedConfig.front_matter === "object"
       ) {
-        merged = deepMerge({}, merged, parsedConfig.front_matter);
+        mergedFrontMatter = deepMerge(
+          {},
+          mergedFrontMatter,
+          parsedConfig.front_matter
+        );
+      }
+      if (
+        parsedConfig &&
+        typeof parsedConfig === "object" &&
+        parsedConfig.rss &&
+        typeof parsedConfig.rss === "object"
+      ) {
+        mergedRss = deepMerge({}, mergedRss, parsedConfig.rss);
       }
     } catch (error) {
       console.error(`Error reading ${fileName}:`, error);
     }
   }
 
-  return merged;
+  return {
+    frontMatter: mergedFrontMatter,
+    rss: mergedRss,
+  };
 };
 
 const findFaviconCandidate = async (inputFolder, subDirectory = "") => {
@@ -422,12 +438,76 @@ const computeOgUrl = (outputFilePath, inputFolder, outputFolder, baseUrl) => {
   return joinUrl(baseUrl, urlPath);
 };
 
+const resolveRssLimit = (value, fallback = 5) => {
+  if (value === undefined || value === null || value === "") {
+    return fallback;
+  }
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return fallback;
+  }
+  return Math.floor(numeric);
+};
+
+const resolveRssConfig = (siteRssConfig, siteFrontMatter, baseUrl) => {
+  const enabled =
+    siteRssConfig?.enabled === undefined
+      ? true
+      : normalizeBooleanValue(siteRssConfig.enabled);
+  const link = siteRssConfig?.link || baseUrl;
+  let image = siteRssConfig?.image;
+  if (image && link && !isAbsoluteUrl(image)) {
+    image = image.startsWith("/") ? joinUrl(link, image) : joinUrl(link, `/${image}`);
+  }
+  return {
+    enabled,
+    link,
+    title: siteRssConfig?.title || siteFrontMatter?.title || "RSS Feed",
+    description:
+      siteRssConfig?.description ||
+      siteFrontMatter?.description ||
+      "Recent posts",
+    language: siteRssConfig?.language || "en",
+    generator: siteRssConfig?.generator || "ZenMD",
+    copyright: siteRssConfig?.copyright,
+    image,
+    limit: resolveRssLimit(siteRssConfig?.limit, 5),
+  };
+};
+
+const buildRssItems = (entries, limit, baseUrl) => {
+  const sortedEntries = [...entries]
+    .filter((entry) => entry?.relative_path && entry.relative_path !== "/")
+    .sort((a, b) => {
+      const aDate = new Date(a.updatedAt || a.createdAt);
+      const bDate = new Date(b.updatedAt || b.createdAt);
+      return bDate - aDate;
+    })
+    .slice(0, limit);
+
+  return sortedEntries.map((entry) => {
+    const link = joinUrl(baseUrl, entry.relative_path);
+    const dateValue = entry.updatedAt || entry.createdAt;
+    const pubDate = dateValue ? new Date(dateValue).toUTCString() : undefined;
+    return {
+      title: entry.title,
+      link,
+      guid: link,
+      description: entry.description,
+      pubDate,
+      categories: entry.tags || [],
+    };
+  });
+};
+
 // Load Markdown file and convert it to HTML
 export const processFolder = async (inputArg, outputFolder, options = {}) => {
   const parse = options.parser || parseMarkdown;
   const sitemap = options.sitemap !== undefined ? options.sitemap : true;
+  const rss = options.rss !== undefined ? options.rss : true;
   const baseUrl = options.baseUrl;
   const renderSitemapFn = options.renderSitemap || renderSitemap;
+  const renderRssFn = options.renderRss || renderRss;
   const renderHtmlPageFn = options.renderHtmlPage || renderHtmlPage;
   try {
     // Ensure the output directory exists to allow writing robots.txt
@@ -441,7 +521,8 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const files = await glob(inputGlob, globOptions);
     const assetsBase = normalizeBaseUrl(baseUrl);
 
-    const siteFrontMatter = await loadSiteFrontMatter(inputFolder);
+    const siteConfig = await loadSiteConfig(inputFolder);
+    const siteFrontMatter = siteConfig.frontMatter;
     const parseOptions = {
       ...options,
       siteFrontMatter,
@@ -567,6 +648,28 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
         path.join(outputFolder, "sitemap.xml"),
         baseUrl
       );
+    }
+
+    const rssConfig = resolveRssConfig(
+      siteConfig.rss,
+      siteFrontMatter,
+      baseUrl
+    );
+    const rssBaseUrl = rssConfig.link
+      ? normalizeBaseUrl(rssConfig.link)
+      : "";
+
+    if (rss && rssConfig.enabled && rssBaseUrl) {
+      const rssItems = buildRssItems(sitemapEntries, rssConfig.limit, rssBaseUrl);
+      const lastBuildDate =
+        rssItems.length > 0
+          ? rssItems[0].pubDate
+          : new Date().toUTCString();
+      await renderRssFn(rssItems, path.join(outputFolder, "rss.xml"), {
+        ...rssConfig,
+        link: rssBaseUrl,
+        lastBuildDate,
+      });
     }
 
     // generate robots.txt that allows everything if none exists in output folder
