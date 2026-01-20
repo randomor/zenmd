@@ -207,6 +207,36 @@ export const buildSitemapTree = (entries) => {
     );
   }
 
+  const ensureTrailingSlash = (value) =>
+    value.endsWith("/") ? value : `${value}/`;
+
+  const mergeIndexPages = (node) => {
+    if (!node?.children?.length) {
+      return;
+    }
+
+    if (node.relative_path !== "/") {
+      const indexPath = ensureTrailingSlash(node.relative_path);
+      const indexChild = node.children.find(
+        (child) => child.createdAt && child.relative_path === indexPath
+      );
+
+      if (indexChild) {
+        node.title = indexChild.title;
+        node.relative_path = indexChild.relative_path;
+        node.order = indexChild.order ?? node.order;
+        node.createdAt = indexChild.createdAt;
+        node.updatedAt = indexChild.updatedAt;
+        node.tags = indexChild.tags;
+        node.children = node.children.filter((child) => child !== indexChild);
+      }
+    }
+
+    node.children.forEach(mergeIndexPages);
+  };
+
+  mergeIndexPages(root);
+
   const sortNodes = (node) => {
     node.children.sort((a, b) => {
       const aOrder = typeof a.order === "number" ? a.order : null;

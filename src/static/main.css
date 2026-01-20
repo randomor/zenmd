@@ -2,6 +2,15 @@ body {
   line-height: 1.8;
   overflow-x: clip;
   /* Prevent horizontal scrollbars from full-bleed images */
+  display: block;
+}
+
+:root {
+  --toc-width: clamp(300px, 30vw, 420px);
+}
+
+body > * {
+  grid-column: auto;
 }
 
 /* Add some anchor style so it shows the link, as headers will always come with a link like:
@@ -53,6 +62,10 @@ main.article img.bleed {
   grid-column: 1 / -1;
 }
 
+body > .main-grid {
+  grid-column: 1 / -1;
+}
+
 /* Article formatting override to fit grid */
 main.article {
   width: 100%;
@@ -62,6 +75,7 @@ main.article {
   min-width: 0;
   overflow-wrap: break-word;
   word-wrap: break-word;
+  text-align: left;
 }
 
 main.article > h1:first-child {
@@ -70,32 +84,37 @@ main.article > h1:first-child {
 
 /* Desktop View with Sidebar */
 @media (min-width: 1100px) {
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(65ch, 80ch) minmax(0, 1fr);
+    column-gap: var(--gap);
+    max-width: calc(
+      80ch + (var(--toc-width) * 2) + (var(--gap) * 2)
+    );
+  }
+
   .main-grid.has-sidebar {
-    grid-template-columns: minmax(65ch, 80ch) var(--sidebar-width);
-    gap: var(--gap);
-    justify-content: center;
-    max-width: calc(80ch + var(--sidebar-width) + var(--gap));
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(65ch, 70ch)
+      minmax(var(--toc-width), 1fr);
   }
 
   .main-grid.has-sidebar .toc-sidebar {
     display: block !important;
+    grid-column: 3;
+    justify-self: start;
+    max-width: var(--toc-width);
+    width: min(100%, var(--toc-width));
   }
 
-  .main-grid.has-sidebar main.article {
-    max-width: 65ch;
+  .main-grid main.article {
+    grid-column: 2;
+    justify-self: center;
   }
 
   /* Since Site Nav is now floating, we don't reserve grid columns for it */
   .main-grid.has-sidenav {
     /* No grid change for just sidenav, it floats on top */
-  }
-
-  .main-grid.has-sidenav.has-sidebar {
-    /* Treat same as has-sidebar */
-    grid-template-columns: minmax(65ch, 80ch) var(--sidebar-width);
-    gap: var(--gap);
-    justify-content: center;
-    max-width: calc(80ch + var(--sidebar-width) + var(--gap));
   }
 
   .hide-on-desktop {
