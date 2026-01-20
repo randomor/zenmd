@@ -1,6 +1,7 @@
 {
   "name": "zenmd",
   "description": "The simplest way to transform a directory of .md files into a static site.",
+  "license": "MIT",
   "keywords": [
     "markdown",
     "wiki",
@@ -8,7 +9,7 @@
     "static site generator",
     "ssg"
   ],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/randomor/zenmd.git"
