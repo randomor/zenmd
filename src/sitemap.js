@@ -67,6 +67,25 @@ const resolveOrderValue = (frontMatter) => {
   return undefined;
 };
 
+const resolveNavTitle = (frontMatter) => {
+  const keys = ["nav_title", "nav-title"];
+  for (const key of keys) {
+    const value = getFrontMatterValue(frontMatter, key);
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        continue;
+      }
+      return trimmed;
+    }
+    return String(value);
+  }
+  return undefined;
+};
+
 export const buildRelativeUrlPath = (outputFolder, outputFilePath) => {
   let relPath = path.relative(outputFolder, outputFilePath);
   relPath = toPosixPath(relPath);
@@ -117,7 +136,9 @@ export const scanMarkdownMetadata = async (
   const stats = await fs.stat(inputFile);
   const firstH1 = extractFirstH1(parsed.content || "");
   const inputFileName = normalizePath(path.parse(inputFile).name);
-  const title = fileFrontMatter.title || firstH1 || inputFileName;
+  const baseTitle = fileFrontMatter.title || firstH1 || inputFileName;
+  const navTitle = resolveNavTitle(fileFrontMatter);
+  const title = navTitle ?? baseTitle;
   const orderValue = resolveOrderValue(fileFrontMatter);
 
   const relativePath = path.relative(inputFolder, inputFile);
@@ -206,6 +227,36 @@ export const buildSitemapTree = (entries) => {
       })
     );
   }
+
+  const ensureTrailingSlash = (value) =>
+    value.endsWith("/") ? value : `${value}/`;
+
+  const mergeIndexPages = (node) => {
+    if (!node?.children?.length) {
+      return;
+    }
+
+    if (node.relative_path !== "/") {
+      const indexPath = ensureTrailingSlash(node.relative_path);
+      const indexChild = node.children.find(
+        (child) => child.createdAt && child.relative_path === indexPath
+      );
+
+      if (indexChild) {
+        node.title = indexChild.title;
+        node.relative_path = indexChild.relative_path;
+        node.order = indexChild.order ?? node.order;
+        node.createdAt = indexChild.createdAt;
+        node.updatedAt = indexChild.updatedAt;
+        node.tags = indexChild.tags;
+        node.children = node.children.filter((child) => child !== indexChild);
+      }
+    }
+
+    node.children.forEach(mergeIndexPages);
+  };
+
+  mergeIndexPages(root);
 
   const sortNodes = (node) => {
     node.children.sort((a, b) => {
