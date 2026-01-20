@@ -472,6 +472,22 @@ main.article img {
   margin: 1.5rem auto;
 }
 
+/* Gradient-backed media framing */
+.gradient-bg {
+  padding: 0.75rem;
+  border-radius: 14px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(230, 230, 230, 0.55));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  .gradient-bg {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.35));
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+  }
+}
+
 main.article iframe {
   display: block;
   margin: 1.5rem auto;

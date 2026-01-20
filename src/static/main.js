@@ -266,6 +266,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const lightboxImage = lightboxOverlay.querySelector('.lightbox-image');
   const lightboxClose = lightboxOverlay.querySelector('.lightbox-close');
+  const articleImages = document.querySelectorAll('main.article img');
+
+  articleImages.forEach((img) => {
+    if (!img.hasAttribute('loading')) {
+      img.setAttribute('loading', 'lazy');
+    }
+    if (!img.hasAttribute('decoding')) {
+      img.setAttribute('decoding', 'async');
+    }
+  });
 
   const openLightbox = (src) => {
     lightboxImage.src = src;
@@ -281,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 300);
   };
 
-  document.querySelectorAll('main.article img').forEach((img) => {
+  articleImages.forEach((img) => {
     img.addEventListener('click', (event) => {
       event.stopPropagation();
       openLightbox(img.src);
