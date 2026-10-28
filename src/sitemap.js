@@ -153,6 +153,7 @@ export const scanMarkdownMetadata = async (
 
   return {
     title,
+    inputFile,
     relative_path: relativeUrlPath,
     relativeFilePath: toPosixPath(normalizedRelativePath),
     order: parseOrder(orderValue),

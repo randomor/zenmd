@@ -69,6 +69,14 @@ export const findLayout = async (
   return path.join(__dirname, "./static/", layoutFileName);
 };
 
+export const joinUrl = (base, pathPart) => {
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  if (pathPart.startsWith("/")) {
+    return `${normalizedBase}${pathPart}`;
+  }
+  return `${normalizedBase}/${pathPart}`;
+};
+
 export const isUrl = (string) => {
   try {
     new URL(string);

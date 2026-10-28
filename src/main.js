@@ -1,10 +1,11 @@
 import path from "path";
 import { glob } from "glob";
-import { renderHtmlPage, renderSitemap } from "./renderer.js";
+import { renderHtmlPage, renderRss, renderSitemap } from "./renderer.js";
 import { parseMarkdown } from "./parser.js";
 import { buildSitemapTree, scanMarkdownMetadata } from "./sitemap.js";
+import { RSS_FILE_NAME, buildRssFeed, resolveRssConfig } from "./rss.js";
 import fs from "fs/promises";
-import { fileExists, deepMerge } from "./utils.js";
+import { fileExists, deepMerge, joinUrl } from "./utils.js";
 import YAML from "yaml";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
@@ -14,9 +15,13 @@ const FAVICON_EXTENSIONS = ["ico", "png", "svg", "jpg", "jpeg", "webp", "gif"];
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const loadSiteFrontMatter = async (inputFolder) => {
+const pickObject = (value) =>
+  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+// Reads site.yaml / site.yml (later files win) and returns the sections we use.
+const loadSiteConfig = async (inputFolder) => {
   const configFiles = ["site.yaml", "site.yml"];
-  let merged = {};
+  let merged = { front_matter: {}, rss: {} };
 
   for (const fileName of configFiles) {
     const siteConfigPath = path.join(inputFolder, fileName);
@@ -26,21 +31,17 @@ const loadSiteFrontMatter = async (inputFolder) => {
 
     try {
       const siteConfigContent = await fs.readFile(siteConfigPath, "utf8");
-      const parsedConfig = YAML.parse(siteConfigContent) || {};
-      if (
-        parsedConfig &&
-        typeof parsedConfig === "object" &&
-        parsedConfig.front_matter &&
-        typeof parsedConfig.front_matter === "object"
-      ) {
-        merged = deepMerge({}, merged, parsedConfig.front_matter);
-      }
+      const parsedConfig = pickObject(YAML.parse(siteConfigContent));
+      merged = deepMerge({}, merged, {
+        front_matter: pickObject(parsedConfig.front_matter),
+        rss: pickObject(parsedConfig.rss),
+      });
     } catch (error) {
       console.error(`Error reading ${fileName}:`, error);
     }
   }
 
-  return merged;
+  return { frontMatter: merged.front_matter, rss: merged.rss };
 };
 
 const findFaviconCandidate = async (inputFolder, subDirectory = "") => {
@@ -155,14 +156,6 @@ const isAbsoluteUrl = (url) => {
   } catch (error) {
     return false;
   }
-};
-
-const joinUrl = (base, pathPart) => {
-  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
-  if (pathPart.startsWith("/")) {
-    return `${normalizedBase}${pathPart}`;
-  }
-  return `${normalizedBase}/${pathPart}`;
 };
 
 const stripLeadingDotSlash = (value) => {
@@ -426,8 +419,10 @@ const computeOgUrl = (outputFilePath, inputFolder, outputFolder, baseUrl) => {
 export const processFolder = async (inputArg, outputFolder, options = {}) => {
   const parse = options.parser || parseMarkdown;
   const sitemap = options.sitemap !== undefined ? options.sitemap : true;
+  const rss = options.rss !== undefined ? options.rss : true;
   const baseUrl = options.baseUrl;
   const renderSitemapFn = options.renderSitemap || renderSitemap;
+  const renderRssFn = options.renderRss || renderRss;
   const renderHtmlPageFn = options.renderHtmlPage || renderHtmlPage;
   try {
     // Ensure the output directory exists to allow writing robots.txt
@@ -441,7 +436,11 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const files = await glob(inputGlob, globOptions);
     const assetsBase = normalizeBaseUrl(baseUrl);
 
-    const siteFrontMatter = await loadSiteFrontMatter(inputFolder);
+    const siteConfig = await loadSiteConfig(inputFolder);
+    const siteFrontMatter = siteConfig.frontMatter;
+    // Like sitemap.xml, the feed needs absolute URLs, so it requires a baseUrl.
+    const rssConfig = resolveRssConfig(siteConfig.rss, siteFrontMatter, baseUrl);
+    const rssEnabled = Boolean(rss && rssConfig.enabled && baseUrl);
     const parseOptions = {
       ...options,
       siteFrontMatter,
@@ -449,6 +448,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     delete parseOptions.parser;
     delete parseOptions.renderHtmlPage;
     delete parseOptions.renderSitemap;
+    delete parseOptions.renderRss;
 
     const pagePromises = files.map((file) =>
       parse(file, inputFolder, outputFolder, parseOptions)
@@ -542,6 +542,14 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
       if (effectiveFrontMatter.assetsBase === undefined) {
         effectiveFrontMatter.assetsBase = assetsBase;
       }
+      if (rssEnabled) {
+        if (effectiveFrontMatter.rssUrl === undefined) {
+          effectiveFrontMatter.rssUrl = rssConfig.feedUrl;
+        }
+        if (effectiveFrontMatter.rssTitle === undefined) {
+          effectiveFrontMatter.rssTitle = rssConfig.title;
+        }
+      }
 
       const resolvedTitle =
         effectiveFrontMatter.title || attributes.title;
@@ -567,6 +575,18 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
         path.join(outputFolder, "sitemap.xml"),
         baseUrl
       );
+    }
+
+    // render RSS feed
+    if (rssEnabled) {
+      const feed = buildRssFeed({
+        pages: pageAttributesList,
+        entries: sitemapEntries,
+        config: rssConfig,
+        inputFolder,
+        outputFolder,
+      });
+      await renderRssFn(feed, path.join(outputFolder, RSS_FILE_NAME));
     }
 
     // generate robots.txt that allows everything if none exists in output folder

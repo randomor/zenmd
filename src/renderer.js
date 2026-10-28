@@ -3,6 +3,7 @@ import { findLayout } from "./utils.js";
 import mustache from "mustache";
 import chalk from "chalk";
 import { collectSitemapPaths } from "./sitemap.js";
+import { renderRssXml } from "./rss.js";
 
 export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') => {
   const {
@@ -56,4 +57,14 @@ export const renderSitemap = async (
   console.log(chalk.greenBright(`Rendered Sitemap: ${sitemapPath}`));
 
   return sitemapXml;
+};
+
+export const renderRss = async (feed, rssPath) => {
+  const rssXml = renderRssXml(feed);
+
+  await fs.writeFile(rssPath, rssXml);
+
+  console.log(chalk.greenBright(`Rendered RSS: ${rssPath}`));
+
+  return rssXml;
 };

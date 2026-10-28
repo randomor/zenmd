@@ -174,7 +174,7 @@ const argv = yargs(hideBin(process.argv))
   .option("baseUrl", {
     alias: "base",
     type: "string",
-    describe: "Base URL for sitemap",
+    describe: "Base URL for sitemap.xml and rss.xml",
   })
   .option("layout", {
     alias: "l",
