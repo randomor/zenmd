@@ -21,18 +21,21 @@ jobs:
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
+    # Publishes through npm trusted publishing (OIDC), so no npm token is stored here.
+    # npmjs.com lists this repo and npm-publish.yml as zenmd's trusted publisher.
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org/
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@11
       - run: npm ci
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
       - name: Bump version
         run: |
           git config --global user.name 'github-actions[bot]'
