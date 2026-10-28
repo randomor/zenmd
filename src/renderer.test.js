@@ -3,7 +3,7 @@ import assert from "node:assert";
 import path from "path";
 import os from "os";
 import { describe, it, beforeEach, afterEach } from "node:test";
-import { renderHtmlPage, renderSitemap } from "./renderer.js";
+import { renderHtmlPage, renderRss, renderSitemap } from "./renderer.js";
 
 const inputFolder = "./src/__test__";
 describe("renderHtmlPage", () => {
@@ -195,5 +195,52 @@ describe("renderSitemap", () => {
       sitemapContent.includes("<loc>https://example.com/second-level/</loc>")
     );
     assert(sitemapContent.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
+  });
+});
+
+describe("renderRss", () => {
+  let outputFolder;
+
+  beforeEach(async () => {
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-render-rss-"));
+  });
+
+  afterEach(async () => {
+    if (outputFolder) {
+      await fs.rm(outputFolder, { recursive: true, force: true });
+      outputFolder = undefined;
+    }
+  });
+
+  it("writes the feed xml to the given path and returns it", async () => {
+    const rssPath = path.join(outputFolder, "rss.xml");
+    const feed = {
+      title: "Example Feed",
+      link: "https://example.com",
+      description: "Latest updates",
+      language: "en",
+      feedUrl: "https://example.com/rss.xml",
+      lastBuildDate: new Date("2025-01-02T00:00:00.000Z"),
+      items: [
+        {
+          title: "First Post",
+          link: "https://example.com/first",
+          description: "First description",
+          content: "<p>First</p>",
+          publishedAt: new Date("2025-01-01T00:00:00.000Z"),
+          updatedAt: new Date("2025-01-02T00:00:00.000Z"),
+          categories: ["news"],
+        },
+      ],
+    };
+
+    const returned = await renderRss(feed, rssPath);
+    const written = await fs.readFile(rssPath, "utf-8");
+
+    assert.strictEqual(returned, written);
+    assert.ok(written.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
+    assert.ok(written.includes("<title>Example Feed</title>"));
+    assert.ok(written.includes("<link>https://example.com/first</link>"));
+    assert.ok(written.includes("<category>news</category>"));
   });
 });

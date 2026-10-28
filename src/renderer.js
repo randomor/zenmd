@@ -1,8 +1,9 @@
 import fs from "fs/promises";
-import { findLayout } from "./utils.js";
+import { findLayout, joinUrl } from "./utils.js";
 import mustache from "mustache";
 import chalk from "chalk";
 import { collectSitemapPaths } from "./sitemap.js";
+import { renderRssXml } from "./rss.js";
 
 export const renderHtmlPage = async (pageAttributes, layoutOption = 'default') => {
   const {
@@ -43,7 +44,10 @@ export const renderSitemap = async (
   baseUrl
 ) => {
   const sitemap = collectSitemapPaths(sitemapTree)
-    .map((relativePath) => `<url><loc>${baseUrl}${relativePath}</loc></url>`)
+    .map(
+      (relativePath) =>
+        `<url><loc>${joinUrl(baseUrl, relativePath)}</loc></url>`
+    )
     .join("\n");
 
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -56,4 +60,14 @@ export const renderSitemap = async (
   console.log(chalk.greenBright(`Rendered Sitemap: ${sitemapPath}`));
 
   return sitemapXml;
+};
+
+export const renderRss = async (feed, rssPath) => {
+  const rssXml = renderRssXml(feed);
+
+  await fs.writeFile(rssPath, rssXml);
+
+  console.log(chalk.greenBright(`Rendered RSS: ${rssPath}`));
+
+  return rssXml;
 };

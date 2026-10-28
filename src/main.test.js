@@ -421,3 +421,211 @@ describe("processFolder - Sitemap", () => {
     );
   });
 });
+
+describe("processFolder - RSS", () => {
+  let inputFolder;
+  let outputFolder;
+  const baseUrl = "https://example.com";
+
+  const writeSiteConfig = (rssLines) =>
+    fs.writeFile(
+      path.join(inputFolder, "site.yaml"),
+      [
+        "front_matter:",
+        "  title: Example Site",
+        "  description: Example description",
+        "rss:",
+        ...rssLines,
+        "",
+      ].join("\n")
+    );
+
+  beforeEach(async () => {
+    inputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-rss-input-"));
+    outputFolder = await fs.mkdtemp(path.join(os.tmpdir(), "zenmd-rss-output-"));
+
+    await fs.mkdir(path.join(inputFolder, "posts"));
+    await fs.mkdir(path.join(inputFolder, "drafts"));
+    await fs.writeFile(path.join(inputFolder, "index.md"), "# Home\n\nWelcome\n");
+    await fs.writeFile(path.join(inputFolder, "about.md"), "# About\n\nAbout us\n");
+    await fs.writeFile(
+      path.join(inputFolder, "drafts", "wip.md"),
+      "# Work in progress\n\nNot yet\n"
+    );
+    await fs.writeFile(
+      path.join(inputFolder, "posts", "first.md"),
+      [
+        "---",
+        "createdAt: 2024-01-01",
+        "tags: [news]",
+        "---",
+        "# First post",
+        "",
+        "First paragraph with a [link](./second.md).",
+        "",
+      ].join("\n")
+    );
+    await fs.writeFile(
+      path.join(inputFolder, "posts", "second.md"),
+      [
+        "---",
+        "createdAt: 2024-03-01",
+        "description: Second description",
+        "---",
+        "# Second post",
+        "",
+        "Body",
+        "",
+      ].join("\n")
+    );
+    await writeSiteConfig(["  exclude:", "    - drafts", "    - about.md"]);
+  });
+
+  afterEach(async () => {
+    await fs.rm(inputFolder, { recursive: true, force: true });
+    await fs.rm(outputFolder, { recursive: true, force: true });
+  });
+
+  it("writes rss.xml honouring site.yaml exclusions and advertises it in pages", async () => {
+    const { processFolder } = await import("./main.js");
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const rss = await fs.readFile(path.join(outputFolder, "rss.xml"), "utf-8");
+
+    assert.ok(rss.includes("<title>Example Site</title>"));
+    assert.ok(rss.includes("<description>Example description</description>"));
+    assert.ok(rss.includes("<link>https://example.com</link>"));
+    assert.ok(
+      rss.includes(
+        '<atom:link href="https://example.com/rss.xml" rel="self" type="application/rss+xml"/>'
+      )
+    );
+
+    assert.ok(rss.includes("<title>First post</title>"));
+    assert.ok(rss.includes("<title>Second post</title>"));
+    assert.ok(
+      rss.indexOf("<title>Second post</title>") < rss.indexOf("<title>First post</title>"),
+      "newer post should come first"
+    );
+    assert.ok(rss.includes("<link>https://example.com/posts/first</link>"));
+    assert.ok(rss.includes("<pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>"));
+    assert.ok(rss.includes("<category>news</category>"));
+    assert.ok(rss.includes("<description>Second description</description>"));
+    assert.ok(rss.includes("<description>First paragraph with a link.</description>"));
+    assert.ok(rss.includes('href="https://example.com/posts/second.html"'));
+
+    assert.ok(!rss.includes("Work in progress"), "drafts folder should be excluded");
+    assert.ok(!rss.includes("<title>About</title>"), "about.md should be excluded");
+    assert.ok(!rss.includes("<title>Home</title>"), "homepage should be excluded");
+
+    const html = await fs.readFile(
+      path.join(outputFolder, "posts", "first.html"),
+      "utf-8"
+    );
+    assert.ok(
+      html.includes(
+        '<link rel="alternate" type="application/rss+xml" title="Example Site" href="https://example.com/rss.xml">'
+      )
+    );
+
+    // Excluded pages are still built and still in the sitemap.
+    const sitemap = await fs.readFile(path.join(outputFolder, "sitemap.xml"), "utf-8");
+    assert.ok(sitemap.includes("<loc>https://example.com/drafts/wip</loc>"));
+    await fs.access(path.join(outputFolder, "about.html"));
+  });
+
+  it("applies the limit from site.yaml", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig(["  limit: 1"]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const rss = await fs.readFile(path.join(outputFolder, "rss.xml"), "utf-8");
+    assert.strictEqual(rss.match(/<item>/g).length, 1);
+    assert.ok(rss.includes("<title>Second post</title>"));
+  });
+
+  it("puts undated pages last without a pubDate", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig([]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const rss = await fs.readFile(path.join(outputFolder, "rss.xml"), "utf-8");
+    const titles = [...rss.matchAll(/<item>\s*<title>([^<]*)<\/title>/g)].map(
+      (match) => match[1]
+    );
+    assert.deepStrictEqual(titles, [
+      "Second post",
+      "First post",
+      "About",
+      "Work in progress",
+    ]);
+    assert.strictEqual(rss.match(/<pubDate>/g).length, 2);
+  });
+
+  it("disables the feed for yaml style booleans", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig(["  enabled: no"]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
+  });
+
+  it("treats a blank baseUrl as missing", async () => {
+    const { processFolder } = await import("./main.js");
+    await processFolder(inputFolder, outputFolder, { baseUrl: "   " });
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
+  });
+
+  it("skips the feed when rss.enabled is false", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig(["  enabled: false"]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
+
+    const html = await fs.readFile(path.join(outputFolder, "index.html"), "utf-8");
+    assert.ok(!html.includes('rel="alternate"'));
+  });
+
+  it("skips the feed without a baseUrl", async () => {
+    const { processFolder } = await import("./main.js");
+    await processFolder(inputFolder, outputFolder);
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
+  });
+
+  it("passes the feed to a custom renderRss", async () => {
+    const { processFolder } = await import("./main.js");
+    const renderRssMock = mock.fn();
+    await processFolder(inputFolder, outputFolder, {
+      baseUrl,
+      renderRss: renderRssMock,
+    });
+
+    assert.strictEqual(renderRssMock.mock.calls.length, 1);
+    const [feed, rssPath] = renderRssMock.mock.calls[0].arguments;
+    assert.strictEqual(rssPath, path.join(outputFolder, "rss.xml"));
+    assert.strictEqual(feed.title, "Example Site");
+    assert.deepStrictEqual(
+      feed.items.map((item) => item.link),
+      ["https://example.com/posts/second", "https://example.com/posts/first"]
+    );
+  });
+});

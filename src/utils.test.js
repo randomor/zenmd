@@ -9,6 +9,10 @@ import {
   findLayout,
   isUrl,
   findImageRecursive,
+  isPlainObject,
+  joinUrl,
+  normalizeBoolean,
+  toPosixPath,
 } from "./utils.js";
 import { fileURLToPath } from "url";
 
@@ -359,5 +363,46 @@ describe("utils.js functions", () => {
       const isEmpty = await folderEmpty(nonExistentDir);
       assert.strictEqual(isEmpty, false);
     });
+  });
+});
+
+describe("joinUrl", () => {
+  it("joins a base and a path with exactly one slash", () => {
+    assert.strictEqual(joinUrl("https://example.com", "/a"), "https://example.com/a");
+    assert.strictEqual(joinUrl("https://example.com/", "/a"), "https://example.com/a");
+    assert.strictEqual(joinUrl("https://example.com/docs/", "a"), "https://example.com/docs/a");
+  });
+});
+
+describe("toPosixPath", () => {
+  it("converts backslashes to forward slashes", () => {
+    assert.strictEqual(toPosixPath("a\\b\\c.md"), "a/b/c.md");
+    assert.strictEqual(toPosixPath("a/b"), "a/b");
+  });
+});
+
+describe("normalizeBoolean", () => {
+  it("maps yaml style strings to booleans and leaves other values alone", () => {
+    for (const value of ["true", "True", " yes ", "on", "1"]) {
+      assert.strictEqual(normalizeBoolean(value), true, value);
+    }
+    for (const value of ["false", "FALSE", "no", "off", "0"]) {
+      assert.strictEqual(normalizeBoolean(value), false, value);
+    }
+    assert.strictEqual(normalizeBoolean("maybe"), "maybe");
+    assert.strictEqual(normalizeBoolean(true), true);
+    assert.strictEqual(normalizeBoolean(0), 0);
+    assert.strictEqual(normalizeBoolean(undefined), undefined);
+  });
+});
+
+describe("isPlainObject", () => {
+  it("accepts object literals and null-prototype objects only", () => {
+    assert.strictEqual(isPlainObject({}), true);
+    assert.strictEqual(isPlainObject(Object.create(null)), true);
+    assert.strictEqual(isPlainObject([]), false);
+    assert.strictEqual(isPlainObject(null), false);
+    assert.strictEqual(isPlainObject("x"), false);
+    assert.strictEqual(isPlainObject(new Date()), false);
   });
 });

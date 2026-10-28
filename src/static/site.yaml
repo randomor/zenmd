@@ -9,3 +9,17 @@
 #   description: "A short description that appears in meta tags."
 #   favicon: "/favicon.png"
 #   ogImage: "/assets/og.png"
+#
+# An RSS feed (`rss.xml`) is generated whenever a base URL is provided
+# (`--baseUrl` or the `BASE_URL` env var). Every key below is optional.
+#
+# rss:
+#   enabled: true                 # set to false to skip the feed entirely
+#   title: "My Awesome Site"      # defaults to front_matter.title
+#   description: "Recent posts"   # defaults to front_matter.description
+#   language: "en"
+#   limit: 20                     # number of most recent pages to include
+#   exclude:                      # folders or files (relative to this folder) to leave out
+#     - drafts                    # everything under drafts/
+#     - about.md                  # a single page
+#     - "**/archive"              # glob patterns work too

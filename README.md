@@ -86,6 +86,8 @@ The preview server rebuilds on file changes and serves clean URLs without the
 - Generates `sitemap.xml` when a base URL is available.
   - Requires `baseUrl` option or `BASE_URL` env var, since `sitemap.xml` requires full URL.
   - If missing base url, no `sitemap.xml` will be generated.
+- Generates an `rss.xml` feed of the most recent pages when a base URL is available.
+  - Configure the feed (and exclude folders from it) via the `rss` block in `site.yaml`, see [RSS feed](#rss-feed).
 - Optional site navigation sidebar for built-in layouts, powered by `sitemap.json`.
   - Enable via `site_navigation: true` in front matter or `site.yaml`.
 - Automatically generates `robots.txt`
@@ -130,13 +132,36 @@ The preview server rebuilds on file changes and serves clean URLs without the
 
 - **Built-in templates**: All built-in layouts (`default`, `matrix`, `cyberpunk`) include OpenGraph meta tags for `og:title`, `og:description`, `og:image`, and `og:url`.
 
+## RSS feed
+
+When a base URL is available (`--baseUrl` or the `BASE_URL` env var), ZenMD writes an RSS 2.0 feed to `rss.xml` in the output folder and the built-in layouts advertise it with a `<link rel="alternate" type="application/rss+xml">` tag. Custom layouts can do the same with `{{{rssUrl}}}` and `{{rssTitle}}`.
+
+- Every rendered page except the homepage (`index.md` at the root) is a candidate.
+- Items are sorted by `createdAt` front matter, newest first, and capped at `limit`. Pages without `createdAt` come last and have no `pubDate`, so add it to anything you want ordered properly.
+- Each item carries the page title, link, `pubDate`, tags as categories, the front matter `description` (or the first paragraph when there is none) and the full page HTML with links and images rewritten to absolute URLs.
+
+Tune it with an optional `rss` block in `site.yaml`; every key is optional:
+
+```yaml
+rss:
+  enabled: true                 # set to false to skip the feed entirely
+  title: "My Awesome Site"      # defaults to front_matter.title
+  description: "Recent posts"   # defaults to front_matter.description
+  language: "en"
+  limit: 20                     # number of most recent pages to include
+  exclude:                      # paths relative to the input folder
+    - drafts                    # everything under drafts/
+    - about.md                  # a single page
+    - "**/archive"              # glob patterns (minimatch) work too
+```
+
+`exclude` only affects the feed; excluded pages are still built and still appear in the sitemap. Use `--tags` if you want to keep pages out of the site altogether.
+
 ## Gaps
 
-Here is a list of known gaps:
+No known deal breakers at the moment.
 
-- The generated site doesn't have a RSS feed.
-
-Feel free to create an issue or submit a PR on Github if you notice more deal breakers...
+Feel free to create an issue or submit a PR on Github if you notice any...
 
 ## How is this different from...?
 
