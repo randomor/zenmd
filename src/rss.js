@@ -1,16 +1,16 @@
 import path from "path";
 import { minimatch } from "minimatch";
-import { buildRelativeUrlPath } from "./sitemap.js";
-import { joinUrl } from "./utils.js";
+import { buildRelativeUrlPath, normalizeTags } from "./sitemap.js";
+import {
+  isPlainObject,
+  joinUrl,
+  normalizeBoolean,
+  toPosixPath,
+} from "./utils.js";
 
 export const RSS_FILE_NAME = "rss.xml";
 const DEFAULT_LIMIT = 20;
 const MATCH_OPTIONS = { dot: true };
-
-const toPosixPath = (value) => value.replace(/\\/g, "/");
-
-const isPlainObject = (value) =>
-  value !== null && typeof value === "object" && !Array.isArray(value);
 
 const pickText = (...values) => {
   for (const value of values) {
@@ -37,8 +37,7 @@ const hostnameOf = (url) => {
 
 const resolveEnabled = (value) => {
   if (value === undefined || value === null) return true;
-  if (typeof value === "string") return value.trim().toLowerCase() !== "false";
-  return Boolean(value);
+  return Boolean(normalizeBoolean(value));
 };
 
 const resolveLimit = (value) => {
@@ -122,12 +121,15 @@ const decodeEntities = (text) =>
       (_, name) => NAMED_ENTITIES[name],
     );
 
+const toPlainText = (html = "") =>
+  decodeEntities(String(html).replace(/<[^>]+>/g, ""))
+    .replace(/\s+/g, " ")
+    .trim();
+
 /** Plain text of the first non-empty paragraph, used when a page has no description. */
 export const extractExcerpt = (html = "") => {
   for (const match of html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)) {
-    const text = decodeEntities(match[1].replace(/<[^>]+>/g, ""))
-      .replace(/\s+/g, " ")
-      .trim();
+    const text = toPlainText(match[1]);
     if (text) return text;
   }
   return "";
@@ -141,21 +143,39 @@ const resolveAgainst = (value, pageUrl) => {
   }
 };
 
-/** Rewrites relative href/src attributes so the HTML is self-contained in feed readers. */
-export const absolutizeUrls = (html = "", pageUrl) =>
-  html.replace(
-    /(\s(?:href|src)=)(?:"([^"]*)"|'([^']*)')/gi,
-    (full, prefix, doubleQuoted, singleQuoted) => {
-      const value = doubleQuoted !== undefined ? doubleQuoted : singleQuoted;
-      if (!value) return full;
-      const quote = doubleQuoted !== undefined ? '"' : "'";
-      return `${prefix}${quote}${resolveAgainst(value, pageUrl)}${quote}`;
-    },
-  );
+const ATTRIBUTE_URLS = /(\s(?:href|src)=)(?:"([^"]*)"|'([^']*)')/gi;
+// Code samples and comments may contain literal `href="..."` text that must stay untouched.
+const PROTECTED_RANGES =
+  /<pre\b[\s\S]*?<\/pre>|<code\b[\s\S]*?<\/code>|<!--[\s\S]*?-->/gi;
 
-// The leading H1 is the page title, which the feed already carries in <title>.
-const stripLeadingHeading = (html = "") =>
-  html.replace(/^\s*<h1\b[^>]*>[\s\S]*?<\/h1>\s*/i, "");
+const rewriteAttributeUrls = (html, pageUrl) =>
+  html.replace(ATTRIBUTE_URLS, (full, prefix, doubleQuoted, singleQuoted) => {
+    const value = doubleQuoted !== undefined ? doubleQuoted : singleQuoted;
+    if (!value) return full;
+    const quote = doubleQuoted !== undefined ? '"' : "'";
+    return `${prefix}${quote}${resolveAgainst(value, pageUrl)}${quote}`;
+  });
+
+/** Rewrites relative href/src attributes so the HTML is self-contained in feed readers. */
+export const absolutizeUrls = (html = "", pageUrl) => {
+  let result = "";
+  let cursor = 0;
+  for (const match of html.matchAll(PROTECTED_RANGES)) {
+    result += rewriteAttributeUrls(html.slice(cursor, match.index), pageUrl);
+    result += match[0];
+    cursor = match.index + match[0].length;
+  }
+  return result + rewriteAttributeUrls(html.slice(cursor), pageUrl);
+};
+
+/** Removes the first H1 when it repeats the item title, which the feed already carries in <title>. */
+export const stripTitleHeading = (html = "", title = "") => {
+  const match = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>\s*/i);
+  if (!match) return html;
+  const headingText = toPlainText(match[1]);
+  if (!headingText || headingText !== toPlainText(title)) return html;
+  return html.slice(0, match.index) + html.slice(match.index + match[0].length);
+};
 
 // rehype-autolink-headings appends empty anchor links to headings; they add nothing in a feed.
 const stripHeadingAnchors = (html = "") =>
@@ -164,59 +184,72 @@ const stripHeadingAnchors = (html = "") =>
     "",
   );
 
+// Dated pages first, newest to oldest; undated pages last, by link for a stable order.
+const compareByDate = (a, b) => {
+  if (a.publishedAt && b.publishedAt) return b.publishedAt - a.publishedAt;
+  if (a.publishedAt) return -1;
+  if (b.publishedAt) return 1;
+  return a.link.localeCompare(b.link);
+};
+
 export const buildRssFeed = ({
   pages = [],
-  entries = [],
   config,
   inputFolder,
   outputFolder,
 }) => {
-  const entriesByFile = new Map(
-    entries
-      .filter((entry) => entry?.inputFile)
-      .map((entry) => [path.resolve(entry.inputFile), entry]),
-  );
-
-  const items = pages
+  // Only the pages that make the cut get the (comparatively costly) content transforms.
+  const selected = pages
     .filter((page) => page?.inputFile && page?.outputFilePath)
     .map((page) => ({
       page,
       relativeFilePath: toPosixPath(path.relative(inputFolder, page.inputFile)),
       relativeUrlPath: buildRelativeUrlPath(outputFolder, page.outputFilePath),
-      entry: entriesByFile.get(path.resolve(page.inputFile)),
     }))
     .filter(
       ({ relativeFilePath, relativeUrlPath }) =>
         relativeUrlPath !== "/" &&
         !isExcludedFromRss(relativeFilePath, config.exclude),
     )
-    .map(({ page, relativeUrlPath, entry }) => {
+    .map(({ page, relativeUrlPath }) => {
       const frontMatter = isPlainObject(page.pageFrontMatter)
         ? page.pageFrontMatter
         : {};
-      const link = joinUrl(config.link, relativeUrlPath);
-      const publishedAt = toDate(entry?.createdAt);
+      // Only front matter dates count: file timestamps are checkout times on CI.
+      const publishedAt = toDate(frontMatter.createdAt);
+      return {
+        page,
+        frontMatter,
+        link: joinUrl(config.link, relativeUrlPath),
+        publishedAt,
+        updatedAt: toDate(frontMatter.updatedAt) || publishedAt,
+      };
+    })
+    .sort(compareByDate)
+    .slice(0, config.limit);
+
+  const items = selected.map(
+    ({ page, frontMatter, link, publishedAt, updatedAt }) => {
+      const title = pickText(frontMatter.title, page.title);
       const content = absolutizeUrls(
-        stripHeadingAnchors(stripLeadingHeading(page.content)),
+        stripHeadingAnchors(stripTitleHeading(page.content, title)),
         link,
       );
 
       return {
-        title: pickText(frontMatter.title, page.title),
+        title,
         link,
         description:
           pickText(frontMatter.description) || extractExcerpt(page.content),
         content,
         publishedAt,
-        updatedAt: toDate(entry?.updatedAt) || publishedAt,
-        categories: Array.isArray(entry?.tags) ? entry.tags.map(String) : [],
+        updatedAt,
+        categories: normalizeTags(frontMatter.tags)
+          .filter((tag) => tag !== undefined && tag !== null)
+          .map(String),
       };
-    })
-    .sort(
-      (a, b) =>
-        (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0),
-    )
-    .slice(0, config.limit);
+    },
+  );
 
   const lastBuildDate = items.reduce(
     (latest, item) =>
@@ -237,6 +270,12 @@ export const buildRssFeed = ({
   };
 };
 
+// Control characters outside tab/newline/CR are not allowed anywhere in XML 1.0.
+const INVALID_XML_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g;
+
+const sanitizeXml = (value) =>
+  String(value ?? "").replace(INVALID_XML_CHARS, "");
+
 const XML_ESCAPES = {
   "&": "&amp;",
   "<": "&lt;",
@@ -246,10 +285,10 @@ const XML_ESCAPES = {
 };
 
 const escapeXml = (value) =>
-  String(value ?? "").replace(/[&<>"']/g, (char) => XML_ESCAPES[char]);
+  sanitizeXml(value).replace(/[&<>"']/g, (char) => XML_ESCAPES[char]);
 
 const cdata = (value) =>
-  `<![CDATA[${String(value).replace(/]]>/g, "]]]]><![CDATA[>")}]]>`;
+  `<![CDATA[${sanitizeXml(value).replace(/]]>/g, "]]]]><![CDATA[>")}]]>`;
 
 const toRfc822 = (date) => date.toUTCString();
 

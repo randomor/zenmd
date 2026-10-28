@@ -9,6 +9,7 @@ import {
   normalizeExcludePatterns,
   renderRssXml,
   resolveRssConfig,
+  stripTitleHeading,
 } from "./rss.js";
 
 describe("resolveRssConfig", () => {
@@ -40,6 +41,12 @@ describe("resolveRssConfig", () => {
     assert.strictEqual(config.feedUrl, "https://blog.example.com/docs/rss.xml");
   });
 
+  it("treats a blank base url as no base url", () => {
+    const config = resolveRssConfig({}, {}, "   ");
+    assert.strictEqual(config.link, "");
+    assert.strictEqual(config.feedUrl, "");
+  });
+
   it("prefers values from the rss block", () => {
     const config = resolveRssConfig(
       {
@@ -60,13 +67,21 @@ describe("resolveRssConfig", () => {
     assert.deepStrictEqual(config.exclude, ["drafts", "about.md"]);
   });
 
-  it("only disables the feed for an explicit false", () => {
-    assert.strictEqual(resolveRssConfig({ enabled: false }).enabled, false);
-    assert.strictEqual(resolveRssConfig({ enabled: "false" }).enabled, false);
-    assert.strictEqual(resolveRssConfig({ enabled: "FALSE" }).enabled, false);
-    assert.strictEqual(resolveRssConfig({ enabled: true }).enabled, true);
-    assert.strictEqual(resolveRssConfig({ enabled: "yes" }).enabled, true);
-    assert.strictEqual(resolveRssConfig({}).enabled, true);
+  it("understands yaml style booleans for enabled", () => {
+    for (const value of [false, "false", "FALSE", "no", "off", "0", 0]) {
+      assert.strictEqual(
+        resolveRssConfig({ enabled: value }).enabled,
+        false,
+        `enabled: ${JSON.stringify(value)} should disable`,
+      );
+    }
+    for (const value of [true, "true", "yes", "on", "1", 1, undefined, null]) {
+      assert.strictEqual(
+        resolveRssConfig({ enabled: value }).enabled,
+        true,
+        `enabled: ${JSON.stringify(value)} should enable`,
+      );
+    }
   });
 
   it("ignores invalid limits", () => {
@@ -85,6 +100,10 @@ describe("resolveRssConfig", () => {
   it("tolerates a non-object rss block", () => {
     assert.strictEqual(
       resolveRssConfig("nope", {}, "https://example.com").enabled,
+      true,
+    );
+    assert.strictEqual(
+      resolveRssConfig(null, {}, "https://example.com").enabled,
       true,
     );
   });
@@ -174,31 +193,59 @@ describe("absolutizeUrls", () => {
       '<img src="https://example.com/posts/pic.png">',
     );
   });
+
+  it("leaves code samples and comments untouched", () => {
+    const html =
+      '<p><a href="./real.html">real</a></p>\n' +
+      '<pre><code class="language-html">&#x3C;a href="./inside-pre.html">c&#x3C;/a>\n</code></pre>\n' +
+      '<p>Inline <code>href="./inline.html"</code> and <!-- <a href="./comment.html"> --> done</p>\n' +
+      '<p><a href="./after.html">after</a></p>';
+
+    assert.strictEqual(
+      absolutizeUrls(html, "https://example.com/docs/page"),
+      '<p><a href="https://example.com/docs/real.html">real</a></p>\n' +
+        '<pre><code class="language-html">&#x3C;a href="./inside-pre.html">c&#x3C;/a>\n</code></pre>\n' +
+        '<p>Inline <code>href="./inline.html"</code> and <!-- <a href="./comment.html"> --> done</p>\n' +
+        '<p><a href="https://example.com/docs/after.html">after</a></p>',
+    );
+  });
+});
+
+describe("stripTitleHeading", () => {
+  it("removes the first h1 wherever it is when it repeats the title", () => {
+    const html =
+      "<p>Intro paragraph.</p>\n" +
+      '<h1 id="real-title">Real &#x26; Title<a aria-hidden="true" href="#real-title"><span class="icon icon-link"></span></a></h1>\n' +
+      "<p>Body</p>";
+
+    assert.strictEqual(
+      stripTitleHeading(html, "Real & Title"),
+      "<p>Intro paragraph.</p>\n<p>Body</p>",
+    );
+  });
+
+  it("keeps an h1 that differs from the title", () => {
+    const html = "<h1>Something else</h1>\n<p>Body</p>";
+    assert.strictEqual(stripTitleHeading(html, "Custom"), html);
+  });
+
+  it("is a no-op without an h1", () => {
+    assert.strictEqual(stripTitleHeading("<p>Body</p>", "Body"), "<p>Body</p>");
+    assert.strictEqual(stripTitleHeading(undefined, "x"), "");
+  });
 });
 
 describe("buildRssFeed", () => {
   const inputFolder = "/site";
   const outputFolder = "/dist";
 
-  const makePage = (relative, overrides = {}) => ({
+  const makePage = (relative, frontMatter = {}, overrides = {}) => ({
     title: path.basename(relative),
     content: `<h1>${path.basename(relative)}</h1>\n<p>Body of ${relative}</p>`,
-    pageFrontMatter: {},
+    pageFrontMatter: frontMatter,
     inputFile: path.join(inputFolder, `${relative}.md`),
     outputFilePath: path.join(outputFolder, `${relative}.html`),
     ...overrides,
-  });
-
-  const makeEntry = (
-    relative,
-    createdAt,
-    updatedAt = createdAt,
-    tags = [],
-  ) => ({
-    inputFile: path.join(inputFolder, `${relative}.md`),
-    createdAt,
-    updatedAt,
-    tags,
   });
 
   const config = resolveRssConfig(
@@ -210,18 +257,11 @@ describe("buildRssFeed", () => {
   it("skips the homepage and excluded paths, sorts newest first and applies the limit", () => {
     const feed = buildRssFeed({
       pages: [
-        makePage("index"),
-        makePage("drafts/wip"),
-        makePage("posts/old"),
-        makePage("posts/new"),
-        makePage("posts/mid"),
-      ],
-      entries: [
-        makeEntry("index", "2024-05-01T00:00:00.000Z"),
-        makeEntry("drafts/wip", "2024-06-01T00:00:00.000Z"),
-        makeEntry("posts/old", "2024-01-01T00:00:00.000Z"),
-        makeEntry("posts/new", "2024-03-01T00:00:00.000Z"),
-        makeEntry("posts/mid", "2024-02-01T00:00:00.000Z"),
+        makePage("index", { createdAt: "2024-05-01" }),
+        makePage("drafts/wip", { createdAt: "2024-06-01" }),
+        makePage("posts/old", { createdAt: "2024-01-01" }),
+        makePage("posts/new", { createdAt: "2024-03-01" }),
+        makePage("posts/mid", { createdAt: "2024-02-01" }),
       ],
       config,
       inputFolder,
@@ -237,30 +277,27 @@ describe("buildRssFeed", () => {
     assert.strictEqual(feed.feedUrl, "https://example.com/rss.xml");
   });
 
-  it("builds items from page attributes and sitemap metadata", () => {
+  it("builds items from page attributes and front matter", () => {
     const feed = buildRssFeed({
       pages: [
-        makePage("posts/first", {
-          title: "Inferred title",
-          pageFrontMatter: {
+        makePage(
+          "posts/first",
+          {
             title: "Front matter title",
             description: "Described",
+            createdAt: new Date("2024-01-01T00:00:00.000Z"),
+            updatedAt: "2024-01-05",
+            tags: ["news", 42],
           },
-          content:
-            '<h1 id="x">Inferred title<a aria-hidden="true" tabindex="-1" href="#x"><span class="icon icon-link"></span></a></h1>\n' +
-            '<h2 id="y">Sub<a aria-hidden="true" tabindex="-1" href="#y"><span class="icon icon-link"></span></a></h2>\n' +
-            '<p>Intro with <a href="./second.html">link</a></p>',
-        }),
-        makePage("posts/index"),
-      ],
-      entries: [
-        makeEntry(
-          "posts/first",
-          "2024-01-01T00:00:00.000Z",
-          "2024-01-05T00:00:00.000Z",
-          ["news", 42],
+          {
+            title: "Inferred title",
+            content:
+              '<h1 id="x">Front matter title<a aria-hidden="true" tabindex="-1" href="#x"><span class="icon icon-link"></span></a></h1>\n' +
+              '<h2 id="y">Sub<a aria-hidden="true" tabindex="-1" href="#y"><span class="icon icon-link"></span></a></h2>\n' +
+              '<p>Intro with <a href="./second.html">link</a></p>',
+          },
         ),
-        makeEntry("posts/index", "2024-01-02T00:00:00.000Z"),
+        makePage("posts/index", { createdAt: "2024-01-02", tags: "solo" }),
       ],
       config,
       inputFolder,
@@ -289,7 +326,7 @@ describe("buildRssFeed", () => {
     assert.strictEqual(indexItem.title, "index");
     assert.strictEqual(indexItem.description, "Body of posts/index");
     assert.strictEqual(indexItem.content, "<p>Body of posts/index</p>");
-    assert.deepStrictEqual(indexItem.categories, []);
+    assert.deepStrictEqual(indexItem.categories, ["solo"]);
 
     assert.strictEqual(
       feed.lastBuildDate.toISOString(),
@@ -297,18 +334,86 @@ describe("buildRssFeed", () => {
     );
   });
 
-  it("copes with pages that have no sitemap entry", () => {
+  it("keeps an h1 that does not repeat the item title", () => {
     const feed = buildRssFeed({
-      pages: [makePage("posts/orphan")],
-      entries: [],
+      pages: [
+        makePage(
+          "posts/custom",
+          { title: "Custom" },
+          { title: "Something", content: "<h1>Something</h1>\n<p>Body</p>" },
+        ),
+      ],
       config,
       inputFolder,
       outputFolder,
     });
 
-    assert.strictEqual(feed.items.length, 1);
+    assert.strictEqual(feed.items[0].title, "Custom");
+    assert.strictEqual(
+      feed.items[0].content,
+      "<h1>Something</h1>\n<p>Body</p>",
+    );
+  });
+
+  it("puts undated pages last, without a date, instead of using file timestamps", () => {
+    const feed = buildRssFeed({
+      pages: [
+        makePage("posts/zeta"),
+        makePage("posts/alpha"),
+        makePage("posts/dated", { createdAt: "2020-01-01" }),
+      ],
+      config: { ...config, limit: 20 },
+      inputFolder,
+      outputFolder,
+    });
+
+    assert.deepStrictEqual(
+      feed.items.map((item) => item.link),
+      [
+        "https://example.com/posts/dated",
+        "https://example.com/posts/alpha",
+        "https://example.com/posts/zeta",
+      ],
+    );
+    assert.strictEqual(feed.items[1].publishedAt, null);
+    assert.strictEqual(feed.items[1].updatedAt, null);
+    assert.strictEqual(
+      feed.lastBuildDate.toISOString(),
+      "2020-01-01T00:00:00.000Z",
+    );
+  });
+
+  it("ignores invalid dates", () => {
+    const feed = buildRssFeed({
+      pages: [makePage("posts/bad", { createdAt: "not a date" })],
+      config,
+      inputFolder,
+      outputFolder,
+    });
+
     assert.strictEqual(feed.items[0].publishedAt, null);
     assert.strictEqual(feed.lastBuildDate, null);
+  });
+
+  it("only touches the content of pages that make the cut", () => {
+    const dropped = makePage("posts/old", { createdAt: "2000-01-01" });
+    Object.defineProperty(dropped, "content", {
+      get() {
+        throw new Error("content of a dropped page was read");
+      },
+    });
+
+    const feed = buildRssFeed({
+      pages: [dropped, makePage("posts/new", { createdAt: "2024-01-01" })],
+      config: { ...config, limit: 1 },
+      inputFolder,
+      outputFolder,
+    });
+
+    assert.deepStrictEqual(
+      feed.items.map((item) => item.link),
+      ["https://example.com/posts/new"],
+    );
   });
 });
 
@@ -405,5 +510,28 @@ describe("renderRssXml", () => {
     assert.ok(!xml.includes("<category>"));
     assert.strictEqual(xml.match(/<description>/g).length, 1);
     assert.ok(xml.includes("<item>"));
+  });
+
+  it("drops characters that are not allowed in XML 1.0", () => {
+    const xml = renderRssXml({
+      title: "Form\u000Cfeed\u0000 title",
+      link: "https://example.com",
+      description: "ok\ttab\nnewline",
+      items: [
+        {
+          title: "Item",
+          link: "https://example.com/item",
+          description: "bell\u0007here",
+          content: "<p>nul\u0000 and \u001Fescape</p>",
+          categories: ["tag\u000B"],
+        },
+      ],
+    });
+
+    assert.ok(xml.includes("<title>Formfeed title</title>"));
+    assert.ok(xml.includes("<description>ok\ttab\nnewline</description>"));
+    assert.ok(xml.includes("<description>bellhere</description>"));
+    assert.ok(xml.includes("<![CDATA[<p>nul and escape</p>]]>"));
+    assert.ok(xml.includes("<category>tag</category>"));
   });
 });

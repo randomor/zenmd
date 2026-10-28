@@ -77,6 +77,21 @@ export const joinUrl = (base, pathPart) => {
   return `${normalizedBase}/${pathPart}`;
 };
 
+export const toPosixPath = (value) => value.replace(/\\/g, "/");
+
+const TRUE_STRINGS = new Set(["true", "yes", "on", "1"]);
+const FALSE_STRINGS = new Set(["false", "no", "off", "0"]);
+
+/** Turns YAML-style boolean strings into booleans; any other value is returned as is. */
+export const normalizeBoolean = (value) => {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (TRUE_STRINGS.has(normalized)) return true;
+    if (FALSE_STRINGS.has(normalized)) return false;
+  }
+  return value;
+};
+
 export const isUrl = (string) => {
   try {
     new URL(string);
@@ -161,7 +176,7 @@ async function findImageRecursive(
 
 export { findImageRecursive };
 
-const isPlainObject = (value) => {
+export const isPlainObject = (value) => {
   if (value === null || typeof value !== "object") {
     return false;
   }

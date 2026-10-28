@@ -5,7 +5,14 @@ import { parseMarkdown } from "./parser.js";
 import { buildSitemapTree, scanMarkdownMetadata } from "./sitemap.js";
 import { RSS_FILE_NAME, buildRssFeed, resolveRssConfig } from "./rss.js";
 import fs from "fs/promises";
-import { fileExists, deepMerge, joinUrl } from "./utils.js";
+import {
+  fileExists,
+  deepMerge,
+  isPlainObject,
+  joinUrl,
+  normalizeBoolean,
+  toPosixPath,
+} from "./utils.js";
 import YAML from "yaml";
 import { fileURLToPath } from "url";
 import chalk from "chalk";
@@ -15,8 +22,7 @@ const FAVICON_EXTENSIONS = ["ico", "png", "svg", "jpg", "jpeg", "webp", "gif"];
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const pickObject = (value) =>
-  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+const pickObject = (value) => (isPlainObject(value) ? value : {});
 
 // Reads site.yaml / site.yml (later files win) and returns the sections we use.
 const loadSiteConfig = async (inputFolder) => {
@@ -170,8 +176,6 @@ const stripLeadingDotSlash = (value) => {
 
   return normalized;
 };
-
-const toPosixPath = (value) => value.replace(/\\/g, "/");
 
 const buildPublicPathFromOutput = (outputFolder, absolutePath) => {
   const relativePath = path.relative(outputFolder, absolutePath);
@@ -352,15 +356,6 @@ const resolveOgImageForPage = async (
   return undefined;
 };
 
-const normalizeBooleanValue = (value) => {
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (normalized === "true") return true;
-    if (normalized === "false") return false;
-  }
-  return value;
-};
-
 const getFrontMatterValue = (frontMatter, key) => {
   if (!frontMatter || typeof frontMatter !== "object") {
     return undefined;
@@ -375,14 +370,14 @@ const resolveSiteNavigationFlag = (pageFrontMatter, siteFrontMatter) => {
   for (const key of keys) {
     const pageValue = getFrontMatterValue(pageFrontMatter, key);
     if (pageValue !== undefined) {
-      return normalizeBooleanValue(pageValue);
+      return normalizeBoolean(pageValue);
     }
   }
 
   for (const key of keys) {
     const siteValue = getFrontMatterValue(siteFrontMatter, key);
     if (siteValue !== undefined) {
-      return normalizeBooleanValue(siteValue);
+      return normalizeBoolean(siteValue);
     }
   }
 
@@ -440,7 +435,7 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     const siteFrontMatter = siteConfig.frontMatter;
     // Like sitemap.xml, the feed needs absolute URLs, so it requires a baseUrl.
     const rssConfig = resolveRssConfig(siteConfig.rss, siteFrontMatter, baseUrl);
-    const rssEnabled = Boolean(rss && rssConfig.enabled && baseUrl);
+    const rssEnabled = Boolean(rss && rssConfig.enabled && rssConfig.link);
     const parseOptions = {
       ...options,
       siteFrontMatter,
@@ -581,7 +576,6 @@ export const processFolder = async (inputArg, outputFolder, options = {}) => {
     if (rssEnabled) {
       const feed = buildRssFeed({
         pages: pageAttributesList,
-        entries: sitemapEntries,
         config: rssConfig,
         inputFolder,
         outputFolder,

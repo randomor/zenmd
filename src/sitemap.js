@@ -1,9 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import matter from "gray-matter";
-import { normalizePath } from "./utils.js";
-
-const toPosixPath = (value) => value.replace(/\\/g, "/");
+import { normalizePath, toPosixPath } from "./utils.js";
 
 const cleanHeadingText = (value) =>
   value.replace(/\s+#+\s*$/, "").trim();
@@ -29,7 +27,7 @@ const toIsoDate = (value, fallbackDate) => {
   return fallbackDate.toISOString();
 };
 
-const normalizeTags = (tagsValue) => {
+export const normalizeTags = (tagsValue) => {
   if (Array.isArray(tagsValue)) {
     return tagsValue;
   }
@@ -153,7 +151,6 @@ export const scanMarkdownMetadata = async (
 
   return {
     title,
-    inputFile,
     relative_path: relativeUrlPath,
     relativeFilePath: toPosixPath(normalizedRelativePath),
     order: parseOrder(orderValue),

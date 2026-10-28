@@ -137,7 +137,7 @@ The preview server rebuilds on file changes and serves clean URLs without the
 When a base URL is available (`--baseUrl` or the `BASE_URL` env var), ZenMD writes an RSS 2.0 feed to `rss.xml` in the output folder and the built-in layouts advertise it with a `<link rel="alternate" type="application/rss+xml">` tag. Custom layouts can do the same with `{{{rssUrl}}}` and `{{rssTitle}}`.
 
 - Every rendered page except the homepage (`index.md` at the root) is a candidate.
-- Items are sorted by `createdAt` front matter (falling back to the file's creation time), newest first, and capped at `limit`.
+- Items are sorted by `createdAt` front matter, newest first, and capped at `limit`. Pages without `createdAt` come last and have no `pubDate`, so add it to anything you want ordered properly.
 - Each item carries the page title, link, `pubDate`, tags as categories, the front matter `description` (or the first paragraph when there is none) and the full page HTML with links and images rewritten to absolute URLs.
 
 Tune it with an optional `rss` block in `site.yaml`; every key is optional:

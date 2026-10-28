@@ -1,5 +1,5 @@
 import fs from "fs/promises";
-import { findLayout } from "./utils.js";
+import { findLayout, joinUrl } from "./utils.js";
 import mustache from "mustache";
 import chalk from "chalk";
 import { collectSitemapPaths } from "./sitemap.js";
@@ -44,7 +44,10 @@ export const renderSitemap = async (
   baseUrl
 ) => {
   const sitemap = collectSitemapPaths(sitemapTree)
-    .map((relativePath) => `<url><loc>${baseUrl}${relativePath}</loc></url>`)
+    .map(
+      (relativePath) =>
+        `<url><loc>${joinUrl(baseUrl, relativePath)}</loc></url>`
+    )
     .join("\n");
 
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>

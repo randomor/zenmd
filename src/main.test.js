@@ -536,12 +536,53 @@ describe("processFolder - RSS", () => {
 
   it("applies the limit from site.yaml", async () => {
     const { processFolder } = await import("./main.js");
-    await writeSiteConfig(["  limit: 1", "  exclude:", "    - drafts", "    - about.md"]);
+    await writeSiteConfig(["  limit: 1"]);
     await processFolder(inputFolder, outputFolder, { baseUrl });
 
     const rss = await fs.readFile(path.join(outputFolder, "rss.xml"), "utf-8");
     assert.strictEqual(rss.match(/<item>/g).length, 1);
     assert.ok(rss.includes("<title>Second post</title>"));
+  });
+
+  it("puts undated pages last without a pubDate", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig([]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const rss = await fs.readFile(path.join(outputFolder, "rss.xml"), "utf-8");
+    const titles = [...rss.matchAll(/<item>\s*<title>([^<]*)<\/title>/g)].map(
+      (match) => match[1]
+    );
+    assert.deepStrictEqual(titles, [
+      "Second post",
+      "First post",
+      "About",
+      "Work in progress",
+    ]);
+    assert.strictEqual(rss.match(/<pubDate>/g).length, 2);
+  });
+
+  it("disables the feed for yaml style booleans", async () => {
+    const { processFolder } = await import("./main.js");
+    await writeSiteConfig(["  enabled: no"]);
+    await processFolder(inputFolder, outputFolder, { baseUrl });
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
+  });
+
+  it("treats a blank baseUrl as missing", async () => {
+    const { processFolder } = await import("./main.js");
+    await processFolder(inputFolder, outputFolder, { baseUrl: "   " });
+
+    const exists = await fs
+      .access(path.join(outputFolder, "rss.xml"))
+      .then(() => true)
+      .catch(() => false);
+    assert.strictEqual(exists, false);
   });
 
   it("skips the feed when rss.enabled is false", async () => {
